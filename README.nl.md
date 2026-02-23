@@ -50,7 +50,9 @@ python -m pytest tests/ -v
 - [x] Difficulty slider (1-10)
 - [x] Quick Play & Challenge modus
 - [x] Timer (optioneel)
-- [x] Leaderboard (localStorage)
+- [x] Leaderboard per moeilijkheidsgraad
+- [x] Naam onthouden
+- [x] Meertalig (Engels, Nederlands)
 - [x] Flood fill algoritme
 - [x] Greedy solver voor max_moves berekening
 - [x] E2E tests met Playwright
