@@ -1,0 +1,17 @@
+version: "3.8"
+
+services:
+  flood-it:
+    image: nginx:alpine
+    container_name: flood-it
+    restart: unless-stopped
+    ports:
+      - "5000:80"
+    volumes:
+      - ./templates/index.html:/usr/share/nginx/html/index.html:ro
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.flood-it.rule=Host(`flood-it.dev.aldof.duckdns.org`)"
+      - "traefik.http.routers.flood-it.entrypoints=websecure"
+      - "traefik.http.routers.flood-it.tls.certresolver=letsencrypt"
+      - "sablier.enable=true"
