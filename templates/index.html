@@ -1,0 +1,920 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flood-It</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #1a1a2e;
+            min-height: 100vh;
+            color: #eee;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .screen {
+            display: none;
+            width: 100%;
+            max-width: 600px;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .screen.active {
+            display: flex;
+        }
+
+        h1 {
+            font-size: 3rem;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #e74c3c, #f39c12, #2ecc71, #3498db);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            color: #888;
+            margin-bottom: 40px;
+        }
+
+        .card {
+            background: #16213e;
+            border-radius: 16px;
+            padding: 30px;
+            width: 100%;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #aaa;
+            font-size: 14px;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 14px 16px;
+            border: 2px solid #0f3460;
+            border-radius: 10px;
+            font-size: 18px;
+            background: #0f3460;
+            color: #fff;
+            text-align: center;
+            text-transform: uppercase;
+            letter-spacing: 8px;
+            font-weight: bold;
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #e94560;
+        }
+
+        input[type="text"]::placeholder {
+            letter-spacing: 2px;
+            color: #666;
+            text-transform: none;
+        }
+
+        .slider-container {
+            margin: 30px 0;
+        }
+
+        .slider-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            color: #aaa;
+            font-size: 14px;
+        }
+
+        .slider-value {
+            color: #e94560;
+            font-weight: bold;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 8px;
+            border-radius: 4px;
+            background: #0f3460;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: #e94560;
+            cursor: pointer;
+            box-shadow: 0 2px 10px rgba(233, 69, 96, 0.5);
+        }
+
+        .mode-buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .mode-btn {
+            flex: 1;
+            padding: 14px;
+            border: 2px solid #0f3460;
+            border-radius: 10px;
+            background: transparent;
+            color: #aaa;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .mode-btn.active {
+            background: #e94560;
+            border-color: #e94560;
+            color: white;
+        }
+
+        .mode-btn:hover:not(.active) {
+            border-color: #e94560;
+            color: #fff;
+        }
+
+        .settings-toggle {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-top: 1px solid #0f3460;
+            margin-top: 10px;
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 50px;
+            height: 26px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: #0f3460;
+            border-radius: 26px;
+            transition: 0.3s;
+        }
+
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 20px;
+            width: 20px;
+            left: 3px;
+            bottom: 3px;
+            background: white;
+            border-radius: 50%;
+            transition: 0.3s;
+        }
+
+        input:checked + .toggle-slider {
+            background: #e94560;
+        }
+
+        input:checked + .toggle-slider:before {
+            transform: translateX(24px);
+        }
+
+        .btn {
+            width: 100%;
+            padding: 16px;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-top: 20px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #e94560, #c73e54);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 20px rgba(233, 69, 96, 0.4);
+        }
+
+        .btn-primary:disabled {
+            background: #333;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .game-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            max-width: 600px;
+            margin-bottom: 20px;
+        }
+
+        .game-info {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+
+        .stat {
+            background: #16213e;
+            padding: 10px 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .stat-label {
+            font-size: 11px;
+            color: #666;
+            text-transform: uppercase;
+        }
+
+        .stat-value {
+            font-size: 20px;
+            font-weight: bold;
+            color: #e94560;
+        }
+
+        .timer {
+            color: #2ecc71;
+        }
+
+        .timer.warning {
+            color: #f39c12;
+        }
+
+        .timer.danger {
+            color: #e74c3c;
+            animation: pulse 0.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .color-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin: 20px 0;
+        }
+
+        .color-btn {
+            width: 50px;
+            height: 50px;
+            border: 3px solid transparent;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .color-btn:hover {
+            transform: scale(1.1);
+        }
+
+        .color-btn.current {
+            border-color: white;
+            box-shadow: 0 0 20px rgba(255,255,255,0.3);
+        }
+
+        .color-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        .color-btn:disabled:hover {
+            transform: none;
+        }
+
+        #game-grid {
+            display: grid;
+            gap: 2px;
+            background: #0a0a15;
+            padding: 4px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+
+        .cell {
+            border-radius: 2px;
+            transition: background-color 0.15s ease;
+        }
+
+        .game-footer {
+            display: flex;
+            gap: 10px;
+            width: 100%;
+            max-width: 600px;
+        }
+
+        .btn-secondary {
+            background: #16213e;
+            color: #aaa;
+            border: 2px solid #0f3460;
+        }
+
+        .btn-secondary:hover {
+            background: #1a2744;
+            color: #fff;
+        }
+
+        .board-indicator {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .board-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #0f3460;
+        }
+
+        .board-dot.active {
+            background: #e94560;
+        }
+
+        .board-dot.completed {
+            background: #2ecc71;
+        }
+
+        .leaderboard {
+            width: 100%;
+            max-width: 400px;
+            margin-top: 30px;
+        }
+
+        .leaderboard h3 {
+            color: #aaa;
+            margin-bottom: 15px;
+            text-align: center;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .leaderboard-entry {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 15px;
+            background: #16213e;
+            border-radius: 8px;
+            margin-bottom: 8px;
+        }
+
+        .leaderboard-rank {
+            color: #f39c12;
+            font-weight: bold;
+            width: 30px;
+        }
+
+        .leaderboard-nickname {
+            flex: 1;
+            text-align: left;
+            padding-left: 10px;
+            letter-spacing: 3px;
+        }
+
+        .leaderboard-score {
+            color: #e94560;
+            font-weight: bold;
+        }
+
+        .leaderboard-empty {
+            text-align: center;
+            color: #666;
+            padding: 20px;
+        }
+
+        .result-screen {
+            text-align: center;
+        }
+
+        .result-score {
+            font-size: 48px;
+            font-weight: bold;
+            color: #e94560;
+            margin: 20px 0;
+        }
+
+        .result-label {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .win-message {
+            color: #2ecc71;
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+
+        .lose-message {
+            color: #e74c3c;
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+
+        .error-msg {
+            color: #e74c3c;
+            font-size: 12px;
+            margin-top: 8px;
+            display: none;
+        }
+
+        .error-msg.show {
+            display: block;
+        }
+
+        .hint {
+            color: #666;
+            font-size: 12px;
+            text-align: center;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div id="start-screen" class="screen active">
+        <h1>Flood-It</h1>
+        <p class="subtitle">Kleur het hele bord in zo weinig mogelijk zetten</p>
+
+        <div class="card">
+            <label>JOUW NAAM (3 TEKENS)</label>
+            <input type="text" id="nickname" maxlength="3" placeholder="ABC">
+            <p id="nickname-error" class="error-msg">Voer precies 3 tekens in</p>
+        </div>
+
+        <div class="card">
+            <div class="mode-buttons">
+                <button class="mode-btn active" data-mode="quick" onclick="selectMode('quick')">QUICK PLAY</button>
+                <button class="mode-btn" data-mode="challenge" onclick="selectMode('challenge')">CHALLENGE</button>
+            </div>
+
+            <div class="slider-container">
+                <div class="slider-label">
+                    <span>Moeilijkheid</span>
+                    <span class="slider-value" id="difficulty-label">5</span>
+                </div>
+                <input type="range" id="difficulty" min="1" max="10" value="5" oninput="updateDifficulty()">
+                <div class="slider-label" style="margin-top: 8px;">
+                    <span>Easy</span>
+                    <span>Hard</span>
+                </div>
+            </div>
+
+            <div class="settings-toggle">
+                <span>Timer inschakelen</span>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="timer-toggle">
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+
+            <div id="timer-info" style="display: none; margin-top: 10px; color: #666; font-size: 12px;">
+                Timer: <span id="timer-duration">65</span> seconden
+            </div>
+        </div>
+
+        <button class="btn btn-primary" onclick="startGame()">START SPEL</button>
+
+        <div class="leaderboard">
+            <h3>Leaderboard - Challenge</h3>
+            <div id="leaderboard-list"></div>
+        </div>
+    </div>
+
+    <div id="game-screen" class="screen">
+        <div class="game-header">
+            <div class="game-info">
+                <div class="stat">
+                    <div class="stat-label">Zetten</div>
+                    <div class="stat-value"><span id="moves">0</span>/<span id="max-moves">25</span></div>
+                </div>
+                <div class="stat timer" id="timer-stat" style="display: none;">
+                    <div class="stat-label">Timer</div>
+                    <div class="stat-value" id="timer-display">60</div>
+                </div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">Naam</div>
+                <div class="stat-value" id="player-name" style="font-size: 16px;">ABC</div>
+            </div>
+        </div>
+
+        <div class="board-indicator" id="board-indicator" style="display: none;">
+            <div class="board-dot active"></div>
+            <div class="board-dot"></div>
+            <div class="board-dot"></div>
+        </div>
+
+        <div id="game-grid"></div>
+
+        <div class="color-buttons" id="color-buttons"></div>
+
+        <div class="game-footer">
+            <button class="btn btn-secondary" onclick="newGame()">NIEUW SPEL</button>
+            <button class="btn btn-primary" id="next-btn" onclick="nextBoard()" style="display: none; margin-top: 0;">VOLGEND BORD</button>
+        </div>
+    </div>
+
+    <div id="result-screen" class="screen">
+        <div class="result-screen">
+            <div id="result-message"></div>
+            <div class="result-label" id="result-label"></div>
+            <div class="result-score" id="result-score"></div>
+            <button class="btn btn-primary" onclick="showStartScreen()">OPNIEUW SPELEN</button>
+        </div>
+    </div>
+
+    <script>
+        let game = null;
+        let nickname = "";
+        let timerInterval = null;
+        let timeLeft = 0;
+        let currentMode = "quick";
+
+        function selectMode(mode) {
+            currentMode = mode;
+            document.querySelectorAll(".mode-btn").forEach(btn => {
+                btn.classList.toggle("active", btn.dataset.mode === mode);
+            });
+
+            const difficultySlider = document.getElementById("difficulty");
+            const difficultyLabel = document.getElementById("difficulty-label");
+            const timerInfo = document.getElementById("timer-info");
+            const timerDuration = document.getElementById("timer-duration");
+
+            if (mode === "challenge") {
+                difficultySlider.value = 5;
+                difficultyLabel.textContent = "5";
+                updateDifficulty();
+            }
+        }
+
+        function updateDifficulty() {
+            const value = document.getElementById("difficulty").value;
+            document.getElementById("difficulty-label").textContent = value;
+
+            const timerEnabled = document.getElementById("timer-toggle").checked;
+            const timerInfo = document.getElementById("timer-info");
+            const timerDuration = document.getElementById("timer-duration");
+
+            const times = {1: 45, 2: 50, 3: 55, 4: 60, 5: 65, 6: 70, 7: 75, 8: 85, 9: 95, 10: 105};
+            timerDuration.textContent = times[value];
+
+            timerInfo.style.display = timerEnabled ? "block" : "none";
+        }
+
+        document.getElementById("timer-toggle").addEventListener("change", updateDifficulty);
+
+        function showScreen(screenId) {
+            document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
+            document.getElementById(screenId).classList.add("active");
+        }
+
+        async function loadLeaderboard() {
+            try {
+                const response = await fetch("/api/leaderboard");
+                const data = await response.json();
+                const list = document.getElementById("leaderboard-list");
+
+                if (data.length === 0) {
+                    list.innerHTML = '<div class="leaderboard-empty">Nog geen scores</div>';
+                    return;
+                }
+
+                list.innerHTML = data.slice(0, 10).map((entry, i) => `
+                    <div class="leaderboard-entry">
+                        <span class="leaderboard-rank">${i + 1}</span>
+                        <span class="leaderboard-nickname">${entry.nickname}</span>
+                        <span class="leaderboard-score">${entry.score.toFixed(1)}</span>
+                    </div>
+                `).join("");
+            } catch (e) {
+                console.error("Failed to load leaderboard:", e);
+            }
+        }
+
+        async function startGame() {
+            nickname = document.getElementById("nickname").value.toUpperCase().trim();
+            const errorEl = document.getElementById("nickname-error");
+
+            if (nickname.length !== 3 || !/^[A-Z0-9]{3}$/.test(nickname)) {
+                errorEl.classList.add("show");
+                return;
+            }
+            errorEl.classList.remove("show");
+
+            const difficulty = parseInt(document.getElementById("difficulty").value);
+            const timerEnabled = document.getElementById("timer-toggle").checked;
+
+            try {
+                const response = await fetch("/api/new-game", {
+                    method: "POST",
+                    headers: {"Content-Type": "application/json"},
+                    body: JSON.stringify({
+                        mode: currentMode,
+                        difficulty: difficulty,
+                        timer: timerEnabled
+                    })
+                });
+                game = await response.json();
+                showScreen("game-screen");
+                document.getElementById("player-name").textContent = nickname;
+                renderGame();
+                startTimer();
+            } catch (e) {
+                alert("Fout bij starten spel: " + e.message);
+            }
+        }
+
+        function startTimer() {
+            if (timerInterval) clearInterval(timerInterval);
+
+            const timerStat = document.getElementById("timer-stat");
+            const timerDisplay = document.getElementById("timer-display");
+
+            if (!game.timer_enabled || currentMode === "quick") {
+                timerStat.style.display = "none";
+                return;
+            }
+
+            timerStat.style.display = "block";
+            timeLeft = game.timer_duration;
+            timerDisplay.textContent = timeLeft;
+            timerDisplay.className = "stat-value";
+
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                timerDisplay.textContent = timeLeft;
+
+                timerDisplay.classList.remove("warning", "danger");
+                if (timeLeft <= 10) {
+                    timerDisplay.classList.add("danger");
+                } else if (timeLeft <= 20) {
+                    timerDisplay.classList.add("warning");
+                }
+
+                if (timeLeft <= 0) {
+                    clearInterval(timerInterval);
+                    gameOver(false);
+                }
+            }, 1000);
+        }
+
+        function renderGame() {
+            const grid = game.grid;
+            const gridSize = game.grid_size;
+            const moves = game.moves;
+            const maxMoves = game.max_moves;
+
+            document.getElementById("moves").textContent = moves;
+            document.getElementById("max-moves").textContent = maxMoves;
+
+            const boardIndicator = document.getElementById("board-indicator");
+            const nextBtn = document.getElementById("next-btn");
+
+            if (currentMode === "challenge" && game.boards) {
+                boardIndicator.style.display = "flex";
+                const dots = document.querySelectorAll(".board-dot");
+                dots.forEach((dot, i) => {
+                    dot.classList.remove("active", "completed");
+                    if (i < game.current_board) {
+                        dot.classList.add("completed");
+                    } else if (i === game.current_board) {
+                        dot.classList.add("active");
+                    }
+                });
+                nextBtn.style.display = "none";
+            } else {
+                boardIndicator.style.display = "none";
+            }
+
+            const gridEl = document.getElementById("game-grid");
+            gridEl.style.gridTemplateColumns = `repeat(${gridSize}, 1fr)`;
+            gridEl.innerHTML = "";
+
+            const maxCellSize = Math.min(400 / gridSize, 50);
+            gridEl.style.maxWidth = `${gridSize * maxCellSize}px`;
+
+            for (let y = 0; y < gridSize; y++) {
+                for (let x = 0; x < gridSize; x++) {
+                    const cell = document.createElement("div");
+                    cell.className = "cell";
+                    cell.style.backgroundColor = COLORS[grid[y][x]];
+                    cell.style.width = `${maxCellSize}px`;
+                    cell.style.height = `${maxCellSize}px`;
+                    gridEl.appendChild(cell);
+                }
+            }
+
+            const colorButtonsEl = document.getElementById("color-buttons");
+            colorButtonsEl.innerHTML = "";
+
+            const currentColor = grid[0][0];
+            for (let i = 0; i < game.num_colors; i++) {
+                const btn = document.createElement("button");
+                btn.className = "color-btn" + (i === currentColor ? " current" : "");
+                btn.style.backgroundColor = COLORS[i];
+                btn.onclick = () => makeMove(i);
+                colorButtonsEl.appendChild(btn);
+            }
+        }
+
+        async function makeMove(color) {
+            try {
+                const response = await fetch("/api/move", {
+                    method: "POST",
+                    headers: {"Content-Type": "application/json"},
+                    body: JSON.stringify({game: game, color: color})
+                });
+                const data = await response.json();
+
+                if (data.valid) {
+                    game = data.game;
+                    renderGame();
+
+                    if (data.won) {
+                        if (currentMode === "challenge") {
+                            game.boards[game.current_board].completed = true;
+                            game.boards[game.current_board].moves = game.moves;
+
+                            if (game.current_board < 2) {
+                                document.getElementById("next-btn").style.display = "block";
+                            } else {
+                                gameEnd();
+                            }
+                        } else {
+                            gameWin();
+                        }
+                    } else if (game.moves >= game.max_moves) {
+                        gameOver(false);
+                    }
+                }
+            } catch (e) {
+                alert("Fout: " + e.message);
+            }
+        }
+
+        async function nextBoard() {
+            try {
+                const response = await fetch("/api/challenge-next", {
+                    method: "POST",
+                    headers: {"Content-Type": "application/json"},
+                    body: JSON.stringify({game: game})
+                });
+                const data = await response.json();
+
+                game = data.game;
+                renderGame();
+                startTimer();
+
+                document.getElementById("next-btn").style.display = "none";
+            } catch (e) {
+                alert("Fout: " + e.message);
+            }
+        }
+
+        async function gameWin() {
+            clearInterval(timerInterval);
+            const score = game.moves;
+
+            if (currentMode === "quick") {
+                try {
+                    await fetch("/api/score", {
+                        method: "POST",
+                        headers: {"Content-Type": "application/json"},
+                        body: JSON.stringify({
+                            nickname: nickname,
+                            score: score,
+                            mode: "quick"
+                        })
+                    });
+                } catch (e) {}
+
+                document.getElementById("result-message").innerHTML = '<div class="win-message">GEWONNEN!</div>';
+                document.getElementById("result-label").textContent = `Behaald in ${score} zetten`;
+                document.getElementById("result-score").textContent = score;
+            } else {
+                gameEnd();
+            }
+
+            showScreen("result-screen");
+        }
+
+        async function gameOver(won) {
+            clearInterval(timerInterval);
+
+            if (currentMode === "quick") {
+                document.getElementById("result-message").innerHTML = '<div class="lose-message">VERLOREN</div>';
+                document.getElementById("result-label").textContent = `Teveel zetten nodig`;
+                document.getElementById("result-score").textContent = game.moves;
+            } else {
+                const scores = game.boards.map(b => b.moves || game.max_moves + 10);
+                const avg = scores.reduce((a, b) => a + b, 0) / scores.length;
+
+                try {
+                    await fetch("/api/score", {
+                        method: "POST",
+                        headers: {"Content-Type": "application/json"},
+                        body: JSON.stringify({
+                            nickname: nickname,
+                            score: avg,
+                            mode: "challenge"
+                        })
+                    });
+                } catch (e) {}
+
+                if (won) {
+                    document.getElementById("result-message").innerHTML = '<div class="win-message">CHALLENGE GEHAALD!</div>';
+                } else {
+                    document.getElementById("result-message").innerHTML = '<div class="lose-message">TIJD VOORBIJ</div>';
+                }
+                document.getElementById("result-label").textContent = `Gemiddelde: ${avg.toFixed(1)} zetten`;
+                document.getElementById("result-score").textContent = avg.toFixed(1);
+            }
+
+            showScreen("result-screen");
+            loadLeaderboard();
+        }
+
+        function gameEnd() {
+            clearInterval(timerInterval);
+            const scores = game.boards.map(b => b.moves || game.max_moves + 10);
+            const avg = scores.reduce((a, b) => a + b, 0) / scores.length;
+
+            (async () => {
+                try {
+                    await fetch("/api/score", {
+                        method: "POST",
+                        headers: {"Content-Type": "application/json"},
+                        body: JSON.stringify({
+                            nickname: nickname,
+                            score: avg,
+                            mode: "challenge"
+                        })
+                    });
+                } catch (e) {}
+
+                document.getElementById("result-message").innerHTML = '<div class="win-message">CHALLENGE GEHAALD!</div>';
+                document.getElementById("result-label").textContent = `Gemiddelde: ${avg.toFixed(1)} zetten`;
+                document.getElementById("result-score").textContent = avg.toFixed(1);
+
+                showScreen("result-screen");
+                loadLeaderboard();
+            })();
+        }
+
+        function newGame() {
+            showStartScreen();
+        }
+
+        function showStartScreen() {
+            clearInterval(timerInterval);
+            showScreen("start-screen");
+            loadLeaderboard();
+        }
+
+        loadLeaderboard();
+    </script>
+</body>
+</html>
