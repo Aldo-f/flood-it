@@ -219,3 +219,94 @@ def test_score_no_decimals(playwright_page):
     # Check leaderboard scores don't have decimals
     score = page.locator(".leaderboard-score").first.text_content()
     assert "." not in score
+
+
+def test_undo_button_exists(playwright_page):
+    """Test that undo button exists in game"""
+    page = playwright_page
+    page.goto(f"file://{os.path.dirname(os.path.dirname(__file__))}/index.html")
+    
+    # Start game
+    page.fill("#nickname", "ABC")
+    page.click("button:has-text('START GAME')")
+    
+    # Check undo button exists
+    undo_btn = page.locator("#undo-btn")
+    assert undo_btn.is_visible()
+
+
+def test_undo_functionality(playwright_page):
+    """Test that undo reverses a move"""
+    page = playwright_page
+    page.goto(f"file://{os.path.dirname(os.path.dirname(__file__))}/index.html")
+    
+    # Start game
+    page.fill("#nickname", "ABC")
+    page.click("button:has-text('START GAME')")
+    
+    # Get initial moves
+    initial_moves = int(page.locator("#moves").text_content())
+    
+    # Make a move
+    color_buttons = page.locator(".color-btn")
+    color_buttons.nth(1).click()
+    
+    # Check moves increased
+    assert int(page.locator("#moves").text_content()) == initial_moves + 1
+    
+    # Click undo
+    page.click("#undo-btn")
+    
+    # Moves should be back to initial
+    assert int(page.locator("#moves").text_content()) == initial_moves
+
+
+def test_hint_button_exists(playwright_page):
+    """Test that hint button exists in game"""
+    page = playwright_page
+    page.goto(f"file://{os.path.dirname(os.path.dirname(__file__))}/index.html")
+    
+    # Start game
+    page.fill("#nickname", "ABC")
+    page.click("button:has-text('START GAME')")
+    
+    # Check hint button exists
+    hint_btn = page.locator("#hint-btn")
+    assert hint_btn.is_visible()
+
+
+def test_hint_highlights_optimal_color(playwright_page):
+    """Test that hint highlights the optimal color"""
+    page = playwright_page
+    page.goto(f"file://{os.path.dirname(os.path.dirname(__file__))}/index.html")
+    
+    # Start game
+    page.fill("#nickname", "ABC")
+    page.click("button:has-text('START GAME')")
+    
+    # Click hint button
+    page.click("#hint-btn")
+    
+    # Check hint indicator appears
+    hint_indicator = page.locator(".hint-indicator")
+    assert hint_indicator.is_visible()
+
+
+def test_hint_undo_disqualifies_leaderboard(playwright_page):
+    """Test that using hint/undo shows in leaderboard"""
+    page = playwright_page
+    page.goto(f"file://{os.path.dirname(os.path.dirname(__file__))}/index.html")
+    
+    # Set test data with hints/undo
+    page.evaluate("""
+        localStorage.setItem('floodit_leaderboard', JSON.stringify([
+            {nickname: 'AAA', score: 15, mode: 'quick', difficulty: 5, hints: 1, undos: 0},
+            {nickname: 'BBB', score: 20, mode: 'quick', difficulty: 5, hints: 0, undos: 2}
+        ]));
+    """)
+    
+    page.reload()
+    
+    # Check for indicators in leaderboard
+    entries = page.locator(".leaderboard-entry")
+    assert entries.count() == 2

@@ -84,6 +84,16 @@
         .error-msg { color: #e74c3c; font-size: 12px; margin-top: 8px; display: none; }
         .error-msg.show { display: block; }
         .hint { color: #666; font-size: 12px; text-align: center; margin-top: 10px; }
+        .game-tools { display: flex; gap: 10px; width: 100%; max-width: 600px; margin-bottom: 10px; }
+        .tool-btn { flex: 1; padding: 10px; border: 2px solid #0f3460; border-radius: 8px; background: #16213e; color: #aaa; font-size: 12px; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 5px; }
+        .tool-btn:hover { border-color: #e94560; color: #fff; }
+        .tool-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+        .tool-btn.used { border-color: #f39c12; color: #f39c12; }
+        .hint-indicator { background: #f39c12; color: #000; padding: 2px 8px; border-radius: 4px; font-size: 11px; margin-left: 5px; }
+        .leaderboard-extras { font-size: 10px; color: #666; margin-left: 5px; }
+        .leaderboard-extras span { margin-right: 5px; }
+        .leaderboard-extras .hint-used { color: #f39c12; }
+        .leaderboard-extras .undo-used { color: #e74c3c; }
     </style>
 </head>
 <body>
@@ -157,6 +167,14 @@
         </div>
         <div id="game-grid"></div>
         <div class="color-buttons" id="color-buttons"></div>
+        <div class="game-tools">
+            <button class="tool-btn" id="undo-btn" onclick="undoMove()" disabled>
+                <span>↩</span> <span data-i18n="undo">UNDO</span>
+            </button>
+            <button class="tool-btn" id="hint-btn" onclick="getHint()">
+                <span>💡</span> <span data-i18n="hint">HINT</span>
+            </button>
+        </div>
         <div class="game-footer">
             <button class="btn btn-secondary" onclick="showStartScreen()" data-i18n="new_game">NEW GAME</button>
             <button class="btn btn-primary" id="next-btn" onclick="nextBoard()" style="display: none; margin-top: 0;" data-i18n="next_board">NEXT BOARD</button>
@@ -210,7 +228,9 @@
                 time_up: "TIME'S UP",
                 average: "Average",
                 moves_count: "moves",
-                no_scores: "No scores yet"
+                no_scores: "No scores yet",
+                undo: "UNDO",
+                hint: "HINT"
             },
             nl: {
                 subtitle: "Kleur het hele bord in zo weinig mogelijk zetten",
@@ -240,7 +260,9 @@
                 time_up: "TIJD VOORBIJ",
                 average: "Gemiddelde",
                 moves_count: "zetten",
-                no_scores: "Nog geen scores"
+                no_scores: "Nog geen scores",
+                undo: "ONGEDAAN",
+                hint: "HINT"
             }
         };
 
@@ -251,6 +273,9 @@
         let timeLeft = 0;
         let currentMode = "quick";
         let currentLeaderboardDiff = "all";
+        let gameHistory = [];
+        let hintsUsed = 0;
+        let undosUsed = 0;
 
         function t(key) {
             return i18n[currentLang][key] || key;
@@ -405,13 +430,24 @@
                     <span class="leaderboard-nickname">${entry.nickname}</span>
                     <span class="leaderboard-difficulty">L${entry.difficulty || "?"}</span>
                     <span class="leaderboard-score">${Math.round(entry.score)}</span>
+                    <span class="leaderboard-extras">
+                        ${entry.hints > 0 ? `<span class="hint-used">💡${entry.hints}</span>` : ''}
+                        ${entry.undos > 0 ? `<span class="undo-used">↩${entry.undos}</span>` : ''}
+                    </span>
                 </div>
             `).join("");
         }
 
         function saveScore(nickname, score, mode, difficulty) {
             const data = JSON.parse(localStorage.getItem("floodit_leaderboard") || "[]");
-            data.push({nickname, score, mode, difficulty});
+            data.push({
+                nickname, 
+                score, 
+                mode, 
+                difficulty,
+                hints: hintsUsed,
+                undos: undosUsed
+            });
             localStorage.setItem("floodit_leaderboard", JSON.stringify(data));
         }
 
@@ -464,6 +500,17 @@
 
             showScreen("game-screen");
             document.getElementById("player-name").textContent = nickname;
+            
+            // Reset history and hints/undos
+            gameHistory = [];
+            hintsUsed = 0;
+            undosUsed = 0;
+            
+            // Reset tool buttons
+            document.getElementById("undo-btn").disabled = true;
+            document.getElementById("undo-btn").classList.remove("used");
+            document.getElementById("hint-btn").classList.remove("used");
+            
             renderGame();
             startTimer();
         }
@@ -544,8 +591,18 @@
             const currentColor = game.grid[0][0];
             if (color === currentColor) return;
 
+            // Save to history for undo
+            gameHistory.push({
+                grid: game.grid.map(row => [...row]),
+                moves: game.moves
+            });
+
             floodFill(game.grid, 0, 0, color);
             game.moves++;
+            
+            // Enable undo button
+            document.getElementById("undo-btn").disabled = false;
+            
             renderGame();
 
             const n = game.grid_size;
@@ -566,6 +623,62 @@
                 }
             } else if (game.moves >= game.max_moves) {
                 gameOver(false);
+            }
+        }
+
+        function undoMove() {
+            if (gameHistory.length === 0) return;
+            
+            const lastState = gameHistory.pop();
+            game.grid = lastState.grid;
+            game.moves = lastState.moves;
+            undosUsed++;
+            
+            // Mark undo as used
+            document.getElementById("undo-btn").classList.add("used");
+            
+            // Disable undo if no more history
+            if (gameHistory.length === 0) {
+                document.getElementById("undo-btn").disabled = true;
+            }
+            
+            renderGame();
+        }
+
+        function getHint() {
+            if (!game) return;
+            
+            // Find the best color using greedy strategy
+            const grid = game.grid;
+            const numColors = game.num_colors;
+            let bestColor = -1;
+            let bestExpansion = -1;
+            
+            for (let c = 0; c < numColors; c++) {
+                if (grid[0][0] === c) continue;
+                const expansion = countExpansion(grid, c);
+                if (expansion > bestExpansion) {
+                    bestExpansion = expansion;
+                    bestColor = c;
+                }
+            }
+            
+            if (bestColor !== -1) {
+                hintsUsed++;
+                
+                // Mark hint as used
+                document.getElementById("hint-btn").classList.add("used");
+                
+                // Highlight the best color
+                const colorButtons = document.querySelectorAll(".color-btn");
+                colorButtons.forEach(btn => btn.classList.remove("hint-indicator"));
+                if (colorButtons[bestColor]) {
+                    colorButtons[bestColor].classList.add("hint-indicator");
+                    // Remove highlight after 2 seconds
+                    setTimeout(() => {
+                        colorButtons[bestColor].classList.remove("hint-indicator");
+                    }, 2000);
+                }
             }
         }
 
