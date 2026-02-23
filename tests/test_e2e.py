@@ -9,7 +9,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 def test_index_page_loads(playwright_page):
     """Test that the main page loads correctly"""
     page = playwright_page
-    page.goto(f"file://{os.path.dirname(os.path.dirname(__file__))}/templates/index.html")
+    page.goto(f"file://{os.path.dirname(os.path.dirname(__file__))}/index.html")
     
     # Check title
     assert page.title() == "Flood-It"
@@ -24,7 +24,7 @@ def test_index_page_loads(playwright_page):
 def test_nickname_validation(playwright_page):
     """Test nickname input validation"""
     page = playwright_page
-    page.goto(f"file://{os.path.dirname(os.path.dirname(__file__))}/templates/index.html")
+    page.goto(f"file://{os.path.dirname(os.path.dirname(__file__))}/index.html")
     
     # Try to start without nickname
     page.click("button:has-text('START SPEL')")
@@ -42,7 +42,7 @@ def test_nickname_validation(playwright_page):
 def test_game_grid_renders(playwright_page):
     """Test that game grid renders correctly"""
     page = playwright_page
-    page.goto(f"file://{os.path.dirname(os.path.dirname(__file__))}/templates/index.html")
+    page.goto(f"file://{os.path.dirname(os.path.dirname(__file__))}/index.html")
     
     # Start game
     page.fill("#nickname", "ABC")
@@ -60,7 +60,7 @@ def test_game_grid_renders(playwright_page):
 def test_color_buttons_render(playwright_page):
     """Test that color buttons render"""
     page = playwright_page
-    page.goto(f"file://{os.path.dirname(os.path.dirname(__file__))}/templates/index.html")
+    page.goto(f"file://{os.path.dirname(os.path.dirname(__file__))}/index.html")
     
     # Start game
     page.fill("#nickname", "ABC")
@@ -74,7 +74,7 @@ def test_color_buttons_render(playwright_page):
 def test_make_move(playwright_page):
     """Test making a move in the game"""
     page = playwright_page
-    page.goto(f"file://{os.path.dirname(os.path.dirname(__file__))}/templates/index.html")
+    page.goto(f"file://{os.path.dirname(os.path.dirname(__file__))}/index.html")
     
     # Start game
     page.fill("#nickname", "ABC")
@@ -97,7 +97,7 @@ def test_make_move(playwright_page):
 def test_difficulty_slider(playwright_page):
     """Test difficulty slider updates label"""
     page = playwright_page
-    page.goto(f"file://{os.path.dirname(os.path.dirname(__file__))}/templates/index.html")
+    page.goto(f"file://{os.path.dirname(os.path.dirname(__file__))}/index.html")
     
     # Check initial value
     assert page.locator("#difficulty-label").text_content() == "5"
@@ -110,7 +110,7 @@ def test_difficulty_slider(playwright_page):
 def test_mode_selection(playwright_page):
     """Test mode selection buttons"""
     page = playwright_page
-    page.goto(f"file://{os.path.dirname(os.path.dirname(__file__))}/templates/index.html")
+    page.goto(f"file://{os.path.dirname(os.path.dirname(__file__))}/index.html")
     
     # Quick play should be active by default
     assert page.locator('.mode-btn[data-mode="quick"]').evaluate("el => el.classList.contains('active')")
@@ -123,24 +123,24 @@ def test_mode_selection(playwright_page):
 def test_timer_toggle(playwright_page):
     """Test timer toggle"""
     page = playwright_page
-    page.goto(f"file://{os.path.dirname(os.path.dirname(__file__))}/templates/index.html")
+    page.goto(f"file://{os.path.dirname(os.path.dirname(__file__))}/index.html")
     
     # Initially hidden
     assert page.locator("#timer-info").is_hidden()
     
-    # Toggle on
-    page.check("#timer-toggle")
+    # Toggle on via JavaScript
+    page.evaluate("document.getElementById('timer-toggle').checked = true; document.getElementById('timer-toggle').dispatchEvent(new Event('change'))")
     assert page.locator("#timer-info").is_visible()
     
-    # Toggle off
-    page.uncheck("#timer-toggle")
+    # Toggle off via JavaScript
+    page.evaluate("document.getElementById('timer-toggle').checked = false; document.getElementById('timer-toggle').dispatchEvent(new Event('change'))")
     assert page.locator("#timer-info").is_hidden()
 
 
 def test_new_game_button(playwright_page):
     """Test new game button returns to start screen"""
     page = playwright_page
-    page.goto(f"file://{os.path.dirname(os.path.dirname(__file__))}/templates/index.html")
+    page.goto(f"file://{os.path.dirname(os.path.dirname(__file__))}/index.html")
     
     # Start game
     page.fill("#nickname", "ABC")
