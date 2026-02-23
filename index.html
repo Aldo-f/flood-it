@@ -1,39 +1,22 @@
 <!DOCTYPE html>
-<html lang="nl">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Flood-It</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: #1a1a2e;
-            min-height: 100vh;
-            color: #eee;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 20px;
-        }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #1a1a2e; min-height: 100vh; color: #eee; display: flex; flex-direction: column; align-items: center; padding: 20px; }
         .screen { display: none; width: 100%; max-width: 600px; flex-direction: column; align-items: center; }
         .screen.active { display: flex; }
-        h1 {
-            font-size: 3rem;
-            margin-bottom: 10px;
-            background: linear-gradient(135deg, #e74c3c, #f39c12, #2ecc71, #3498db);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
+        h1 { font-size: 3rem; margin-bottom: 10px; background: linear-gradient(135deg, #e74c3c, #f39c12, #2ecc71, #3498db); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        .lang-switch { position: absolute; top: 20px; right: 20px; display: flex; gap: 5px; }
+        .lang-btn { background: #16213e; border: 1px solid #0f3460; color: #aaa; padding: 5px 10px; border-radius: 5px; cursor: pointer; font-size: 12px; }
+        .lang-btn.active { background: #e94560; color: white; border-color: #e94560; }
         .subtitle { color: #888; margin-bottom: 40px; }
         .card { background: #16213e; border-radius: 16px; padding: 30px; width: 100%; margin-bottom: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.3); }
         label { display: block; margin-bottom: 8px; color: #aaa; font-size: 14px; }
-        input[type="text"] {
-            width: 100%; padding: 14px 16px; border: 2px solid #0f3460; border-radius: 10px;
-            font-size: 18px; background: #0f3460; color: #fff; text-align: center;
-            text-transform: uppercase; letter-spacing: 8px; font-weight: bold;
-        }
+        input[type="text"] { width: 100%; padding: 14px 16px; border: 2px solid #0f3460; border-radius: 10px; font-size: 18px; background: #0f3460; color: #fff; text-align: center; text-transform: uppercase; letter-spacing: 8px; font-weight: bold; }
         input[type="text"]:focus { outline: none; border-color: #e94560; }
         input[type="text"]::placeholder { letter-spacing: 2px; color: #666; text-transform: none; }
         .slider-container { margin: 30px 0; }
@@ -41,13 +24,12 @@
         .slider-value { color: #e94560; font-weight: bold; }
         input[type="range"] { width: 100%; height: 8px; border-radius: 4px; background: #0f3460; outline: none; -webkit-appearance: none; }
         input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 24px; height: 24px; border-radius: 50%; background: #e94560; cursor: pointer; box-shadow: 0 2px 10px rgba(233, 69, 96, 0.5); }
-        .mode-buttons { display: flex; gap: 10px; margin-bottom: 20px; }
-        .mode-btn {
-            flex: 1; padding: 14px; border: 2px solid #0f3460; border-radius: 10px;
-            background: transparent; color: #aaa; font-size: 14px; font-weight: bold; cursor: pointer; transition: all 0.2s;
-        }
+        .mode-buttons { display: flex; gap: 10px; margin-bottom: 15px; }
+        .mode-btn { flex: 1; padding: 14px; border: 2px solid #0f3460; border-radius: 10px; background: transparent; color: #aaa; font-size: 14px; font-weight: bold; cursor: pointer; transition: all 0.2s; }
         .mode-btn.active { background: #e94560; border-color: #e94560; color: white; }
         .mode-btn:hover:not(.active) { border-color: #e94560; color: #fff; }
+        .challenge-info { background: #0f3460; padding: 12px; border-radius: 8px; font-size: 13px; color: #aaa; margin-bottom: 20px; display: none; }
+        .challenge-info.visible { display: block; }
         .settings-toggle { display: flex; align-items: center; justify-content: space-between; padding: 12px 0; border-top: 1px solid #0f3460; margin-top: 10px; }
         .toggle-switch { position: relative; width: 50px; height: 26px; }
         .toggle-switch input { opacity: 0; width: 0; height: 0; }
@@ -71,7 +53,7 @@
         .color-buttons { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin: 20px 0; }
         .color-btn { width: 50px; height: 50px; border: 3px solid transparent; border-radius: 12px; cursor: pointer; transition: all 0.2s; }
         .color-btn:hover { transform: scale(1.1); }
-        .color-btn.current { border-color: white; box-shadow: 0 0 20px rgba(255,255,255,0.3); }
+        { border-color: white; box-shadow: 0 0 20px rgba(255,255,255,0.3); }
         .color-btn:disabled { opacity: 0.4; cursor: not-allowed; }
         .color-btn:disabled:hover { transform: none; }
         #game-grid { display: grid; gap: 2px; background: #0a0a15; padding: 4px; border-radius: 8px; margin: 20px 0; }
@@ -85,9 +67,13 @@
         .board-dot.completed { background: #2ecc71; }
         .leaderboard { width: 100%; max-width: 400px; margin-top: 30px; }
         .leaderboard h3 { color: #aaa; margin-bottom: 15px; text-align: center; font-size: 14px; text-transform: uppercase; letter-spacing: 2px; }
+        .leaderboard-tabs { display: flex; gap: 5px; margin-bottom: 15px; justify-content: center; }
+        .leaderboard-tab { background: transparent; border: 1px solid #0f3460; color: #aaa; padding: 5px 12px; border-radius: 15px; font-size: 12px; cursor: pointer; }
+        .leaderboard-tab.active { background: #e94560; border-color: #e94560; color: white; }
         .leaderboard-entry { display: flex; justify-content: space-between; padding: 10px 15px; background: #16213e; border-radius: 8px; margin-bottom: 8px; }
         .leaderboard-rank { color: #f39c12; font-weight: bold; width: 30px; }
         .leaderboard-nickname { flex: 1; text-align: left; padding-left: 10px; letter-spacing: 3px; }
+        .leaderboard-difficulty { color: #666; font-size: 11px; }
         .leaderboard-score { color: #e94560; font-weight: bold; }
         .leaderboard-empty { text-align: center; color: #666; padding: 20px; }
         .result-screen { text-align: center; }
@@ -101,38 +87,59 @@
     </style>
 </head>
 <body>
+    <div class="lang-switch">
+        <button class="lang-btn active" data-lang="en">EN</button>
+        <button class="lang-btn" data-lang="nl">NL</button>
+    </div>
+
     <div id="start-screen" class="screen active">
         <h1>Flood-It</h1>
-        <p class="subtitle">Kleur het hele bord in zo weinig mogelijk zetten</p>
+        <p class="subtitle" data-i18n="subtitle">Color the whole board in as few moves as possible</p>
         <div class="card">
-            <label>JOUW NAAM (3 TEKENS)</label>
+            <label data-i18n="nickname_label">YOUR NAME (3 CHARS)</label>
             <input type="text" id="nickname" maxlength="3" placeholder="ABC">
-            <p id="nickname-error" class="error-msg">Voer precies 3 tekens in</p>
+            <p id="nickname-error" class="error-msg" data-i18n="nickname_error">Enter exactly 3 characters</p>
         </div>
         <div class="card">
             <div class="mode-buttons">
-                <button class="mode-btn active" data-mode="quick" onclick="selectMode('quick')">QUICK PLAY</button>
-                <button class="mode-btn" data-mode="challenge" onclick="selectMode('challenge')">CHALLENGE</button>
+                <button class="mode-btn active" data-mode="quick" data-i18n="quick_play">QUICK PLAY</button>
+                <button class="mode-btn" data-mode="challenge" data-i18n="challenge">CHALLENGE</button>
+            </div>
+            <div class="challenge-info" id="challenge-info" data-i18n="challenge_info">
+                Play 3 boards. Your score is the average of the 3 boards.
             </div>
             <div class="slider-container">
-                <div class="slider-label"><span>Moeilijkheid</span><span class="slider-value" id="difficulty-label">5</span></div>
+                <div class="slider-label"><span data-i18n="difficulty">Difficulty</span><span class="slider-value" id="difficulty-label">5</span></div>
                 <input type="range" id="difficulty" min="1" max="10" value="5" oninput="updateDifficulty()">
-                <div class="slider-label" style="margin-top: 8px;"><span>Easy</span><span>Hard</span></div>
+                <div class="slider-label" style="margin-top: 8px;"><span data-i18n="easy">Easy</span><span data-i18n="hard">Hard</span></div>
             </div>
             <div class="settings-toggle">
-                <span>Timer inschakelen</span>
+                <span data-i18n="timer_enable">Enable timer</span>
                 <label class="toggle-switch">
                     <input type="checkbox" id="timer-toggle">
                     <span class="toggle-slider"></span>
                 </label>
             </div>
             <div id="timer-info" style="display: none; margin-top: 10px; color: #666; font-size: 12px;">
-                Timer: <span id="timer-duration">65</span> seconden
+                <span data-i18n="timer">Timer</span>: <span id="timer-duration">65</span> <span data-i18n="seconds">seconds</span>
             </div>
         </div>
-        <button class="btn btn-primary" onclick="startGame()">START SPEL</button>
+        <button class="btn btn-primary" onclick="startGame()" data-i18n="start_game">START GAME</button>
         <div class="leaderboard">
-            <h3>Leaderboard - Challenge</h3>
+            <h3 data-i18n="leaderboard">Leaderboard</h3>
+            <div class="leaderboard-tabs">
+                <button class="leaderboard-tab active" data-diff="all" data-i18n="all">All</button>
+                <button class="leaderboard-tab" data-diff="1">1</button>
+                <button class="leaderboard-tab" data-diff="2">2</button>
+                <button class="leaderboard-tab" data-diff="3">3</button>
+                <button class="leaderboard-tab" data-diff="4">4</button>
+                <button class="leaderboard-tab" data-diff="5">5</button>
+                <button class="leaderboard-tab" data-diff="6">6</button>
+                <button class="leaderboard-tab" data-diff="7">7</button>
+                <button class="leaderboard-tab" data-diff="8">8</button>
+                <button class="leaderboard-tab" data-diff="9">9</button>
+                <button class="leaderboard-tab" data-diff="10">10</button>
+            </div>
             <div id="leaderboard-list"></div>
         </div>
     </div>
@@ -140,10 +147,10 @@
     <div id="game-screen" class="screen">
         <div class="game-header">
             <div class="game-info">
-                <div class="stat"><div class="stat-label">Zetten</div><div class="stat-value"><span id="moves">0</span>/<span id="max-moves">25</span></div></div>
-                <div class="stat timer" id="timer-stat" style="display: none;"><div class="stat-label">Timer</div><div class="stat-value" id="timer-display">60</div></div>
+                <div class="stat"><div class="stat-label" data-i18n="moves">Moves</div><div class="stat-value"><span id="moves">0</span>/<span id="max-moves">25</span></div></div>
+                <div class="stat timer" id="timer-stat" style="display: none;"><div class="stat-label" data-i18n="timer">Timer</div><div class="stat-value" id="timer-display">60</div></div>
             </div>
-            <div class="stat"><div class="stat-label">Naam</div><div class="stat-value" id="player-name" style="font-size: 16px;">ABC</div></div>
+            <div class="stat"><div class="stat-label" data-i18n="name">Name</div><div class="stat-value" id="player-name" style="font-size: 16px;">ABC</div></div>
         </div>
         <div class="board-indicator" id="board-indicator" style="display: none;">
             <div class="board-dot active"></div><div class="board-dot"></div><div class="board-dot"></div>
@@ -151,8 +158,8 @@
         <div id="game-grid"></div>
         <div class="color-buttons" id="color-buttons"></div>
         <div class="game-footer">
-            <button class="btn btn-secondary" onclick="showStartScreen()">NIEUW SPEL</button>
-            <button class="btn btn-primary" id="next-btn" onclick="nextBoard()" style="display: none; margin-top: 0;">VOLGEND BORD</button>
+            <button class="btn btn-secondary" onclick="showStartScreen()" data-i18n="new_game">NEW GAME</button>
+            <button class="btn btn-primary" id="next-btn" onclick="nextBoard()" style="display: none; margin-top: 0;" data-i18n="next_board">NEXT BOARD</button>
         </div>
     </div>
 
@@ -161,7 +168,7 @@
             <div id="result-message"></div>
             <div class="result-label" id="result-label"></div>
             <div class="result-score" id="result-score"></div>
-            <button class="btn btn-primary" onclick="showStartScreen()">OPNIEUW SPELEN</button>
+            <button class="btn btn-primary" onclick="showStartScreen()" data-i18n="play_again">PLAY AGAIN</button>
         </div>
     </div>
 
@@ -174,21 +181,125 @@
             10: {grid: 20, colors: 8, time: 105}
         };
 
+        const i18n = {
+            en: {
+                subtitle: "Color the whole board in as few moves as possible",
+                nickname_label: "YOUR NAME (3 CHARS)",
+                nickname_error: "Enter exactly 3 characters",
+                quick_play: "QUICK PLAY",
+                challenge: "CHALLENGE",
+                challenge_info: "Play 3 boards (10x10, 6 colors). Your score is the average of the 3 boards.",
+                difficulty: "Difficulty",
+                easy: "Easy",
+                hard: "Hard",
+                timer_enable: "Enable timer",
+                timer: "Timer",
+                seconds: "seconds",
+                start_game: "START GAME",
+                leaderboard: "Leaderboard",
+                all: "All",
+                moves: "Moves",
+                name: "Name",
+                new_game: "NEW GAME",
+                next_board: "NEXT BOARD",
+                play_again: "PLAY AGAIN",
+                won: "WON!",
+                lost: "LOST",
+                too_many_moves: "Too many moves needed",
+                challenge_completed: "CHALLENGE COMPLETED!",
+                time_up: "TIME'S UP",
+                average: "Average",
+                moves_count: "moves",
+                no_scores: "No scores yet"
+            },
+            nl: {
+                subtitle: "Kleur het hele bord in zo weinig mogelijk zetten",
+                nickname_label: "JOUW NAAM (3 TEKENS)",
+                nickname_error: "Voer precies 3 tekens in",
+                quick_play: "QUICK PLAY",
+                challenge: "CHALLENGE",
+                challenge_info: "Speel 3 borden (10x10, 6 kleuren). Je score is het gemiddelde van de 3 borden.",
+                difficulty: "Moeilijkheid",
+                easy: "Easy",
+                hard: "Hard",
+                timer_enable: "Timer inschakelen",
+                timer: "Timer",
+                seconds: "seconden",
+                start_game: "START SPEL",
+                leaderboard: "Leaderboard",
+                all: "Alle",
+                moves: "Zetten",
+                name: "Naam",
+                new_game: "NIEUW SPEL",
+                next_board: "VOLGEND BORD",
+                play_again: "OPNIEUW SPELEN",
+                won: "GEWONNEN!",
+                lost: "VERLOREN",
+                too_many_moves: "Teveel zetten nodig",
+                challenge_completed: "CHALLENGE GEHAALD!",
+                time_up: "TIJD VOORBIJ",
+                average: "Gemiddelde",
+                moves_count: "zetten",
+                no_scores: "Nog geen scores"
+            }
+        };
+
+        let currentLang = "en";
         let game = null;
         let nickname = "";
         let timerInterval = null;
         let timeLeft = 0;
         let currentMode = "quick";
+        let currentLeaderboardDiff = "all";
+
+        function t(key) {
+            return i18n[currentLang][key] || key;
+        }
+
+        function setLanguage(lang) {
+            currentLang = lang;
+            document.querySelectorAll(".lang-btn").forEach(btn => {
+                btn.classList.toggle("active", btn.dataset.lang === lang);
+            });
+            document.querySelectorAll("[data-i18n]").forEach(el => {
+                const key = el.dataset.i18n;
+                if (el.tagName === "INPUT") {
+                    el.placeholder = t(key + "_placeholder") || "";
+                } else {
+                    el.textContent = t(key);
+                }
+            });
+            updateDifficulty();
+            loadLeaderboard();
+        }
+
+        document.querySelectorAll(".lang-btn").forEach(btn => {
+            btn.addEventListener("click", () => setLanguage(btn.dataset.lang));
+        });
+
+        document.querySelectorAll(".leaderboard-tab").forEach(tab => {
+            tab.addEventListener("click", () => {
+                document.querySelectorAll(".leaderboard-tab").forEach(t => t.classList.remove("active"));
+                tab.classList.add("active");
+                currentLeaderboardDiff = tab.dataset.diff;
+                loadLeaderboard();
+            });
+        });
 
         function selectMode(mode) {
             currentMode = mode;
             document.querySelectorAll(".mode-btn").forEach(btn => btn.classList.toggle("active", btn.dataset.mode === mode));
+            document.getElementById("challenge-info").classList.toggle("visible", mode === "challenge");
             if (mode === "challenge") {
                 document.getElementById("difficulty").value = 5;
                 document.getElementById("difficulty-label").textContent = "5";
                 updateDifficulty();
             }
         }
+
+        document.querySelectorAll(".mode-btn").forEach(btn => {
+            btn.addEventListener("click", () => selectMode(btn.dataset.mode));
+        });
 
         function updateDifficulty() {
             const value = parseInt(document.getElementById("difficulty").value);
@@ -278,24 +389,29 @@
 
         function loadLeaderboard() {
             const data = JSON.parse(localStorage.getItem("floodit_leaderboard") || "[]");
-            data.sort((a, b) => a.score - b.score);
+            let filtered = data;
+            if (currentLeaderboardDiff !== "all") {
+                filtered = data.filter(e => e.difficulty === parseInt(currentLeaderboardDiff));
+            }
+            filtered.sort((a, b) => a.score - b.score);
             const list = document.getElementById("leaderboard-list");
-            if (data.length === 0) {
-                list.innerHTML = '<div class="leaderboard-empty">Nog geen scores</div>';
+            if (filtered.length === 0) {
+                list.innerHTML = `<div class="leaderboard-empty">${t("no_scores")}</div>`;
                 return;
             }
-            list.innerHTML = data.slice(0, 10).map((entry, i) => `
+            list.innerHTML = filtered.slice(0, 10).map((entry, i) => `
                 <div class="leaderboard-entry">
                     <span class="leaderboard-rank">${i + 1}</span>
                     <span class="leaderboard-nickname">${entry.nickname}</span>
-                    <span class="leaderboard-score">${entry.score.toFixed(1)}</span>
+                    <span class="leaderboard-difficulty">L${entry.difficulty || "?"}</span>
+                    <span class="leaderboard-score">${Math.round(entry.score)}</span>
                 </div>
             `).join("");
         }
 
-        function saveScore(nickname, score, mode) {
+        function saveScore(nickname, score, mode, difficulty) {
             const data = JSON.parse(localStorage.getItem("floodit_leaderboard") || "[]");
-            data.push({nickname, score, mode});
+            data.push({nickname, score, mode, difficulty});
             localStorage.setItem("floodit_leaderboard", JSON.stringify(data));
         }
 
@@ -307,6 +423,9 @@
                 return;
             }
             errorEl.classList.remove("show");
+
+            // Save nickname for persistence
+            localStorage.setItem("floodit_nickname", nickname);
 
             const difficulty = parseInt(document.getElementById("difficulty").value);
             const timerEnabled = document.getElementById("timer-toggle").checked;
@@ -466,9 +585,9 @@
         function gameWin() {
             clearInterval(timerInterval);
             const score = game.moves;
-            saveScore(nickname, score, "quick");
-            document.getElementById("result-message").innerHTML = '<div class="win-message">GEWONNEN!</div>';
-            document.getElementById("result-label").textContent = `Behaald in ${score} zetten`;
+            saveScore(nickname, score, "quick", game.difficulty);
+            document.getElementById("result-message").innerHTML = `<div class="win-message">${t("won")}</div>`;
+            document.getElementById("result-label").textContent = `${t("average")}: ${score} ${t("moves_count")}`;
             document.getElementById("result-score").textContent = score;
             showScreen("result-screen");
             loadLeaderboard();
@@ -477,21 +596,21 @@
         function gameOver(won) {
             clearInterval(timerInterval);
             if (currentMode === "quick") {
-                document.getElementById("result-message").innerHTML = '<div class="lose-message">VERLOREN</div>';
-                document.getElementById("result-label").textContent = `Teveel zetten nodig`;
+                document.getElementById("result-message").innerHTML = `<div class="lose-message">${t("lost")}</div>`;
+                document.getElementById("result-label").textContent = t("too_many_moves");
                 document.getElementById("result-score").textContent = game.moves;
             } else {
                 const scores = game.boards.map(b => b.moves || game.max_moves + 10);
                 const avg = scores.reduce((a, b) => a + b, 0) / scores.length;
                 const wonByTime = timeLeft > 0;
                 if (wonByTime) {
-                    document.getElementById("result-message").innerHTML = '<div class="win-message">CHALLENGE GEHAALD!</div>';
+                    document.getElementById("result-message").innerHTML = `<div class="win-message">${t("challenge_completed")}</div>`;
                 } else {
-                    document.getElementById("result-message").innerHTML = '<div class="lose-message">TIJD VOORBIJ</div>';
+                    document.getElementById("result-message").innerHTML = `<div class="lose-message">${t("time_up")}</div>`;
                 }
-                document.getElementById("result-label").textContent = `Gemiddelde: ${avg.toFixed(1)} zetten`;
-                document.getElementById("result-score").textContent = avg.toFixed(1);
-                saveScore(nickname, avg, "challenge");
+                document.getElementById("result-label").textContent = `${t("average")}: ${Math.round(avg)} ${t("moves_count")}`;
+                document.getElementById("result-score").textContent = Math.round(avg);
+                saveScore(nickname, avg, "challenge", game.difficulty);
             }
             showScreen("result-screen");
             loadLeaderboard();
@@ -501,20 +620,32 @@
             clearInterval(timerInterval);
             const scores = game.boards.map(b => b.moves || game.max_moves + 10);
             const avg = scores.reduce((a, b) => a + b, 0) / scores.length;
-            document.getElementById("result-message").innerHTML = '<div class="win-message">CHALLENGE GEHAALD!</div>';
-            document.getElementById("result-label").textContent = `Gemiddelde: ${avg.toFixed(1)} zetten`;
-            document.getElementById("result-score").textContent = avg.toFixed(1);
-            saveScore(nickname, avg, "challenge");
+            document.getElementById("result-message").innerHTML = `<div class="win-message">${t("challenge_completed")}</div>`;
+            document.getElementById("result-label").textContent = `${t("average")}: ${Math.round(avg)} ${t("moves_count")}`;
+            document.getElementById("result-score").textContent = Math.round(avg);
+            saveScore(nickname, avg, "challenge", game.difficulty);
             showScreen("result-screen");
             loadLeaderboard();
         }
 
         function showStartScreen() {
             clearInterval(timerInterval);
+            
+            // Restore nickname from localStorage
+            const savedNickname = localStorage.getItem("floodit_nickname");
+            if (savedNickname) {
+                document.getElementById("nickname").value = savedNickname;
+            }
+            
             showScreen("start-screen");
             loadLeaderboard();
         }
 
+        // Initialize
+        const savedNickname = localStorage.getItem("floodit_nickname");
+        if (savedNickname) {
+            document.getElementById("nickname").value = savedNickname;
+        }
         loadLeaderboard();
     </script>
 </body>
