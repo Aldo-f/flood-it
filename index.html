@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Games</title>
+    <link rel="stylesheet" href="shared/css/style.css">
+    <style>
+        .dashboard-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .dashboard-header h1 {
+            font-size: 3rem;
+            margin-bottom: 10px;
+        }
+        
+        .search-container {
+            width: 100%;
+            max-width: 400px;
+            margin: 0 auto 30px;
+            position: relative;
+        }
+        
+        .search-input {
+            width: 100%;
+            padding: 14px 20px 14px 45px;
+            border: 2px solid #0f3460;
+            border-radius: 30px;
+            font-size: 16px;
+            background: #16213e;
+            color: #fff;
+            transition: all 0.2s;
+        }
+        
+        .search-input:focus {
+            outline: none;
+            border-color: #e94560;
+            box-shadow: 0 0 20px rgba(233, 69, 96, 0.2);
+        }
+        
+        .search-icon {
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #666;
+            font-size: 18px;
+        }
+        
+        .games-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+            width: 100%;
+            max-width: 900px;
+        }
+        
+        .game-card {
+            background: #16213e;
+            border-radius: 16px;
+            padding: 25px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+            text-decoration: none;
+            color: inherit;
+            display: block;
+        }
+        
+        .game-card:hover {
+            transform: translateY(-5px);
+            border-color: #e94560;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+        
+        .game-card-icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+            display: block;
+        }
+        
+        .game-card-title {
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: #eee;
+            margin-bottom: 8px;
+        }
+        
+        .game-card-description {
+            font-size: 0.85rem;
+            color: #888;
+            line-height: 1.4;
+        }
+        
+        .game-card-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: bold;
+            margin-top: 12px;
+            text-transform: uppercase;
+        }
+        
+        .badge-new {
+            background: #2ecc71;
+            color: #000;
+        }
+        
+        .badge-daily {
+            background: #f39c12;
+            color: #000;
+        }
+        
+        .badge-popular {
+            background: #e94560;
+            color: #fff;
+        }
+        
+        .badge-soon {
+            background: #0f3460;
+            color: #666;
+        }
+        
+        .no-results {
+            text-align: center;
+            color: #666;
+            padding: 40px;
+            display: none;
+        }
+        
+        .no-results.visible {
+            display: block;
+        }
+        
+        .footer-links {
+            margin-top: 40px;
+            text-align: center;
+            padding: 20px;
+            border-top: 1px solid #0f3460;
+            width: 100%;
+        }
+        
+        .footer-links a {
+            color: #666;
+            text-decoration: none;
+            font-size: 14px;
+            margin: 0 10px;
+            transition: color 0.2s;
+        }
+        
+        .footer-links a:hover {
+            color: #e94560;
+        }
+        
+        .account-toggle {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: #16213e;
+            padding: 8px 15px;
+            border-radius: 25px;
+            border: 1px solid #0f3460;
+        }
+        
+        .account-toggle span {
+            font-size: 12px;
+            color: #aaa;
+        }
+        
+        .account-toggle .toggle-btn {
+            padding: 5px 12px;
+            border-radius: 15px;
+            border: none;
+            font-size: 11px;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: transparent;
+            color: #666;
+        }
+        
+        .account-toggle .toggle-btn.active {
+            background: #e94560;
+            color: white;
+        }
+        
+        .account-toggle .toggle-btn.coming-soon {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        @media (max-width: 600px) {
+            .dashboard-header h1 {
+                font-size: 2rem;
+            }
+            
+            .games-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .account-toggle {
+                top: 10px;
+                left: 10px;
+                padding: 6px 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <div class="account-toggle">
+            <span id="local-label">Local</span>
+            <button class="toggle-btn active" id="btn-local" onclick="setAccountMode('local')">Lokaal</button>
+            <button class="toggle-btn coming-soon" id="btn-cloud" onclick="setAccountMode('cloud')">Cloud</button>
+        </div>
+        
+        <div class="lang-switch">
+            <button class="lang-btn" data-lang="en" onclick="setLanguage('en')">EN</button>
+            <button class="lang-btn" data-lang="nl" onclick="setLanguage('nl')">NL</button>
+        </div>
+
+        <div class="dashboard-header">
+            <h1>Games</h1>
+            <p class="subtitle">Kies een spel en begin te spelen</p>
+        </div>
+
+        <div class="search-container">
+            <span class="search-icon">🔍</span>
+            <input type="text" class="search-input" id="search-input" placeholder="Zoek spelletjes..." oninput="filterGames()">
+        </div>
+
+        <div class="games-grid" id="games-grid">
+            <a href="games/flood-it/" class="game-card">
+                <span class="game-card-icon">🎨</span>
+                <div class="game-card-title">Flood-It</div>
+                <div class="game-card-description">Kleur het hele bord in zo weinig mogelijk zetten</div>
+                <span class="game-card-badge badge-popular">Populair</span>
+            </a>
+            
+            <a href="games/word-search/" class="game-card">
+                <span class="game-card-icon">🔤</span>
+                <div class="game-card-title">Woordzoeker</div>
+                <div class="game-card-description">Vind alle verborgen woorden in het grid</div>
+                <span class="game-card-badge badge-new">Nieuw</span>
+            </a>
+            
+            <div class="game-card" onclick="showComingSoon()">
+                <span class="game-card-icon">🧩</span>
+                <div class="game-card-title">Sudoku</div>
+                <div class="game-card-description">Vul het raster in met de juiste cijfers</div>
+                <span class="game-card-badge badge-soon">Binnenkort</span>
+            </div>
+            
+            <div class="game-card" onclick="showComingSoon()">
+                <span class="game-card-icon">👑</span>
+                <div class="game-card-title">Queens</div>
+                <div class="game-card-description">Plaats koninginnen zonder dat ze elkaar aanvallen</div>
+                <span class="game-card-badge badge-soon">Binnenkort</span>
+            </div>
+            
+            <div class="game-card" onclick="showComingSoon()">
+                <span class="game-card-icon">📦</span>
+                <div class="game-card-title">Zip</div>
+                <div class="game-card-description">挤压方块以适合网格</div>
+                <span class="game-card-badge badge-soon">Binnenkort</span>
+            </div>
+            
+            <div class="game-card" onclick="showComingSoon()">
+                <span class="game-card-icon">💃</span>
+                <div class="game-card-title">Tango</div>
+                <div class="game-card-description">Koppel de paren in het raster</div>
+                <span class="game-card-badge badge-soon">Binnenkort</span>
+            </div>
+        </div>
+
+        <div class="no-results" id="no-results">
+            <p>Geen spelletjes gevonden</p>
+        </div>
+
+        <div class="footer-links">
+            <a href="https://github.com/aldo-f/games" target="_blank">GitHub</a>
+            <span style="color: #333;">•</span>
+            <span style="color: #666; font-size: 12px;">v1.0</span>
+        </div>
+    </div>
+
+    <script src="shared/js/i18n.js"></script>
+    <script>
+        let currentLang = localStorage.getItem('games_lang') || 'nl';
+        
+        document.querySelectorAll('.lang-btn').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.lang === currentLang);
+        });
+        
+        function setLanguage(lang) {
+            currentLang = lang;
+            localStorage.setItem('games_lang', lang);
+            document.querySelectorAll('.lang-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.lang === lang);
+            });
+            
+            const texts = {
+                en: {
+                    subtitle: 'Choose a game and start playing',
+                    search: 'Search games...',
+                    noResults: 'No games found',
+                    local: 'Local',
+                    cloud: 'Cloud',
+                    comingSoon: 'Coming Soon',
+                    popular: 'Popular',
+                    new: 'New'
+                },
+                nl: {
+                    subtitle: 'Kies een spel en begin te spelen',
+                    search: 'Zoek spelletjes...',
+                    noResults: 'Geen spelletjes gevonden',
+                    local: 'Lokaal',
+                    cloud: 'Cloud',
+                    comingSoon: 'Binnenkort',
+                    popular: 'Populair',
+                    new: 'Nieuw'
+                }
+            };
+            
+            document.querySelector('.subtitle').textContent = texts[lang].subtitle;
+            document.getElementById('search-input').placeholder = texts[lang].search;
+            document.getElementById('local-label').textContent = texts[lang].local;
+            document.getElementById('btn-local').textContent = texts[lang].local;
+            document.getElementById('btn-cloud').textContent = texts[lang].cloud;
+        }
+        
+        function filterGames() {
+            const searchTerm = document.getElementById('search-input').value.toLowerCase();
+            const cards = document.querySelectorAll('.game-card');
+            let visibleCount = 0;
+            
+            cards.forEach(card => {
+                const title = card.querySelector('.game-card-title').textContent.toLowerCase();
+                const desc = card.querySelector('.game-card-description').textContent.toLowerCase();
+                
+                if (title.includes(searchTerm) || desc.includes(searchTerm)) {
+                    card.style.display = 'block';
+                    visibleCount++;
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+            
+            document.getElementById('no-results').classList.toggle('visible', visibleCount === 0);
+        }
+        
+        function setAccountMode(mode) {
+            if (mode === 'cloud') return;
+            
+            document.getElementById('btn-local').classList.toggle('active', mode === 'local');
+            document.getElementById('btn-cloud').classList.toggle('active', mode === 'cloud');
+            localStorage.setItem('games_account_mode', mode);
+        }
+        
+        function showComingSoon() {
+            alert('Dit spel is binnenkort beschikbaar! / This game is coming soon!');
+        }
+        
+        setLanguage(currentLang);
+    </script>
+</body>
+</html>
