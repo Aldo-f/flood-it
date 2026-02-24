@@ -57,7 +57,7 @@
         .color-btn:disabled { opacity: 0.4; cursor: not-allowed; }
         .color-btn:disabled:hover { transform: none; }
         #game-grid { display: grid; gap: 2px; background: #0a0a15; padding: 4px; border-radius: 8px; margin: 20px 0; }
-        .cell { border-radius: 2px; transition: background-color 0.15s ease; }
+        .cell { border-radius: 2px; transition: background-color 0.15s ease; position: relative; }
         .game-footer { display: flex; gap: 10px; width: 100%; max-width: 600px; }
         .btn-secondary { background: #16213e; color: #aaa; border: 2px solid #0f3460; }
         .btn-secondary:hover { background: #1a2744; color: #fff; }
@@ -94,9 +94,41 @@
         .leaderboard-extras span { margin-right: 5px; }
         .leaderboard-extras .hint-used { color: #f39c12; }
         .leaderboard-extras .undo-used { color: #e74c3c; }
+        
+        /* Display settings */
+        .display-section { margin-top: 15px; padding-top: 15px; border-top: 1px solid #0f3460; }
+        .display-section-title { color: #aaa; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; }
+        .display-options { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+        .display-option-btn { flex: 1; min-width: 70px; padding: 10px 8px; border: 2px solid #0f3460; border-radius: 8px; background: transparent; color: #aaa; font-size: 11px; font-weight: bold; cursor: pointer; transition: all 0.2s; text-align: center; }
+        .display-option-btn.active { background: #e94560; border-color: #e94560; color: white; }
+        .display-option-btn:hover:not(.active) { border-color: #e94560; color: #fff; }
+        
+        /* High brightness colors */
+        .cell.high-brightness { filter: brightness(1.3); }
+        
+        /* Black & white mode */
+        .cell.bw-mode { filter: grayscale(100%) contrast(1.2); }
+        
+        /* Numbers on cells */
+        .cell-number { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 14px; color: white; text-shadow: 0 0 3px rgba(0,0,0,0.8), 0 0 1px rgba(0,0,0,1); pointer-events: none; }
+        
+        /* Dice dots */
+        .cell-dice { position: absolute; inset: 0; display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 1fr); padding: 15%; pointer-events: none; }
+        .dice-dot { background: white; border-radius: 50%; box-shadow: 0 0 3px rgba(0,0,0,0.8), 0 0 1px rgba(0,0,0,1); }
+        .dice-dot.empty { visibility: hidden; }
+        
+        /* Compact grid */
+        #game-grid.compact { gap: 0; padding: 0; }
+        #game-grid.compact .cell { border-radius: 0; }
+        
+        /* Centered layout */
+        .app-container { width: 100%; max-width: 700px; display: flex; flex-direction: column; align-items: center; }
+        .screen { display: none; width: 100%; flex-direction: column; align-items: center; }
+        .screen .card, .screen .leaderboard, .screen .game-header, .screen .game-footer { max-width: 100%; }
     </style>
 </head>
 <body>
+    <div class="app-container">
     <div class="lang-switch">
         <button class="lang-btn active" data-lang="en">EN</button>
         <button class="lang-btn" data-lang="nl">NL</button>
@@ -132,6 +164,24 @@
             </div>
             <div id="timer-info" style="display: none; margin-top: 10px; color: #666; font-size: 12px;">
                 <span data-i18n="timer">Timer</span>: <span id="timer-duration">65</span> <span data-i18n="seconds">seconds</span>
+            </div>
+            <div class="display-section">
+                <div class="display-section-title" data-i18n="display_mode">Display</div>
+                <div class="display-options">
+                    <button class="display-option-btn active" data-display="colors" data-i18n="colors">Colors</button>
+                    <button class="display-option-btn" data-display="numbers" data-i18n="numbers">Numbers</button>
+                    <button class="display-option-btn" data-display="dice" data-i18n="dice">Dice</button>
+                </div>
+                <div class="display-section-title" data-i18n="brightness">Brightness</div>
+                <div class="display-options">
+                    <button class="display-option-btn brightness-btn active" data-brightness="normal" data-i18n="normal">Normal</button>
+                    <button class="display-option-btn brightness-btn" data-brightness="high" data-i18n="high">High</button>
+                </div>
+                <div class="display-section-title" data-i18n="contrast_mode">Contrast</div>
+                <div class="display-options">
+                    <button class="display-option-btn contrast-btn active" data-contrast="color" data-i18n="color">Color</button>
+                    <button class="display-option-btn contrast-btn" data-contrast="bw" data-i18n="bw">B&W</button>
+                </div>
             </div>
         </div>
         <button class="btn btn-primary" onclick="startGame()" data-i18n="start_game">START GAME</button>
@@ -173,6 +223,9 @@
             </button>
             <button class="tool-btn" id="hint-btn" onclick="getHint()">
                 <span>💡</span> <span data-i18n="hint">HINT</span>
+            </button>
+            <button class="tool-btn" id="compact-btn" onclick="toggleCompact()">
+                <span>⊞</span> <span data-i18n="compact">COMPACT</span>
             </button>
         </div>
         <div class="game-footer">
@@ -230,7 +283,18 @@
                 moves_count: "moves",
                 no_scores: "No scores yet",
                 undo: "UNDO",
-                hint: "HINT"
+                hint: "HINT",
+                display_mode: "Display",
+                colors: "Colors",
+                numbers: "Numbers",
+                dice: "Dice",
+                brightness: "Brightness",
+                normal: "Normal",
+                high: "High",
+                contrast_mode: "Contrast",
+                color: "Color",
+                bw: "B&W",
+                compact: "COMPACT"
             },
             nl: {
                 subtitle: "Kleur het hele bord in zo weinig mogelijk zetten",
@@ -262,7 +326,18 @@
                 moves_count: "zetten",
                 no_scores: "Nog geen scores",
                 undo: "ONGEDAAN",
-                hint: "HINT"
+                hint: "HINT",
+                display_mode: "Weergave",
+                colors: "Kleuren",
+                numbers: "Cijfers",
+                dice: "Dobbel",
+                brightness: "Helderheid",
+                normal: "Normaal",
+                high: "Hoog",
+                contrast_mode: "Contrast",
+                color: "Kleur",
+                bw: "Z&W",
+                compact: "COMPACT"
             }
         };
 
@@ -276,6 +351,10 @@
         let gameHistory = [];
         let hintsUsed = 0;
         let undosUsed = 0;
+        let displayMode = "colors";
+        let brightnessMode = "normal";
+        let contrastMode = "color";
+        let compactMode = false;
 
         function t(key) {
             return i18n[currentLang][key] || key;
@@ -324,6 +403,36 @@
 
         document.querySelectorAll(".mode-btn").forEach(btn => {
             btn.addEventListener("click", () => selectMode(btn.dataset.mode));
+        });
+
+        document.querySelectorAll(".display-option-btn[data-display]").forEach(btn => {
+            btn.addEventListener("click", () => {
+                document.querySelectorAll(".display-option-btn[data-display]").forEach(b => b.classList.remove("active"));
+                btn.classList.add("active");
+                displayMode = btn.dataset.display;
+                localStorage.setItem("floodit_display", displayMode);
+                if (game) renderGame();
+            });
+        });
+
+        document.querySelectorAll(".brightness-btn").forEach(btn => {
+            btn.addEventListener("click", () => {
+                document.querySelectorAll(".brightness-btn").forEach(b => b.classList.remove("active"));
+                btn.classList.add("active");
+                brightnessMode = btn.dataset.brightness;
+                localStorage.setItem("floodit_brightness", brightnessMode);
+                if (game) renderGame();
+            });
+        });
+
+        document.querySelectorAll(".contrast-btn").forEach(btn => {
+            btn.addEventListener("click", () => {
+                document.querySelectorAll(".contrast-btn").forEach(b => b.classList.remove("active"));
+                btn.classList.add("active");
+                contrastMode = btn.dataset.contrast;
+                localStorage.setItem("floodit_contrast", contrastMode);
+                if (game) renderGame();
+            });
         });
 
         function updateDifficulty() {
@@ -561,7 +670,8 @@
             const gridEl = document.getElementById("game-grid");
             gridEl.style.gridTemplateColumns = `repeat(${gridSize}, 1fr)`;
             gridEl.innerHTML = "";
-            const maxCellSize = Math.min(400 / gridSize, 50);
+            gridEl.classList.toggle("compact", compactMode);
+            const maxCellSize = compactMode ? Math.min(450 / gridSize, 55) : Math.min(400 / gridSize, 50);
             gridEl.style.maxWidth = `${gridSize * maxCellSize}px`;
 
             for (let y = 0; y < gridSize; y++) {
@@ -571,6 +681,8 @@
                     cell.style.backgroundColor = COLORS[grid[y][x]];
                     cell.style.width = `${maxCellSize}px`;
                     cell.style.height = `${maxCellSize}px`;
+                    cell.style.position = "relative";
+                    renderCellContent(cell, grid[y][x], COLORS[grid[y][x]]);
                     gridEl.appendChild(cell);
                 }
             }
@@ -682,6 +794,64 @@
             }
         }
 
+        function toggleCompact() {
+            compactMode = !compactMode;
+            const btn = document.getElementById("compact-btn");
+            btn.classList.toggle("used", compactMode);
+            if (game) renderGame();
+        }
+
+        function getDiceDots(num) {
+            const dots = [
+                [0,0,0,0,0,0,0,0,0],
+                [0,0,0,0,1,0,0,0,0],
+                [0,0,0,0,0,0,0,0,0],
+                [0,0,0,0,0,0,0,0,0],
+                [0,1,0,0,1,0,0,1,0],
+                [0,0,0,0,0,0,0,0,0],
+                [0,0,0,0,1,0,0,0,0],
+                [0,1,0,0,1,0,0,1,0],
+                [1,0,0,0,1,0,0,0,1]
+            ];
+            if (num === 1) return dots[0];
+            if (num === 2) return dots[1];
+            if (num === 3) return dots[4];
+            if (num === 4) return dots[2];
+            if (num === 5) return dots[3];
+            if (num === 6) return dots[5];
+            if (num === 7) return dots[6];
+            if (num === 8) return dots[7];
+            return dots[8];
+        }
+
+        function renderCellContent(cell, colorIndex, colorValue) {
+            cell.innerHTML = "";
+            
+            if (displayMode === "numbers") {
+                const numEl = document.createElement("div");
+                numEl.className = "cell-number";
+                numEl.textContent = colorIndex + 1;
+                cell.appendChild(numEl);
+            } else if (displayMode === "dice") {
+                const diceEl = document.createElement("div");
+                diceEl.className = "cell-dice";
+                const dots = getDiceDots(colorIndex + 1);
+                dots.forEach(d => {
+                    const dot = document.createElement("div");
+                    dot.className = "dice-dot" + (d ? "" : " empty");
+                    diceEl.appendChild(dot);
+                });
+                cell.appendChild(diceEl);
+            }
+            
+            if (brightnessMode === "high") {
+                cell.classList.add("high-brightness");
+            }
+            if (contrastMode === "bw") {
+                cell.classList.add("bw-mode");
+            }
+        }
+
         function nextBoard() {
             game.current_board++;
             if (game.current_board >= 3) {
@@ -759,7 +929,24 @@
         if (savedNickname) {
             document.getElementById("nickname").value = savedNickname;
         }
+        
+        // Load display settings
+        displayMode = localStorage.getItem("floodit_display") || "colors";
+        brightnessMode = localStorage.getItem("floodit_brightness") || "normal";
+        contrastMode = localStorage.getItem("floodit_contrast") || "color";
+        
+        document.querySelectorAll(".display-option-btn[data-display]").forEach(btn => {
+            btn.classList.toggle("active", btn.dataset.display === displayMode);
+        });
+        document.querySelectorAll(".brightness-btn").forEach(btn => {
+            btn.classList.toggle("active", btn.dataset.brightness === brightnessMode);
+        });
+        document.querySelectorAll(".contrast-btn").forEach(btn => {
+            btn.classList.toggle("active", btn.dataset.contrast === contrastMode);
+        });
+        
         loadLeaderboard();
     </script>
+    </div>
 </body>
 </html>

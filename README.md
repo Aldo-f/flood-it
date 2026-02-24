@@ -1,66 +1,47 @@
-# Flood-It
+# Games
 
-A color-filling puzzle game built with HTML, CSS, and JavaScript. Goal is to flood the entire board with a single color in as few moves as possible.
+A collection of browser-based puzzle games.
 
-## How to Play
+## Available Games
 
-1. Enter your name (3 characters, e.g., "ABC")
-2. Choose difficulty (1-10)
-3. Choose game mode:
-   - **Quick Play**: Play 1 board
-   - **Challenge**: Play 3 boards, score is the average
-4. Optional: Enable timer
-5. Click colors to flood the board starting from the top-left corner
+- **Flood-It** - Color the whole board in as few moves as possible
+- **Word Search** - Find all hidden words in the grid
 
-## Play Online
+## Playing
 
-- **GitHub Pages**: https://aldo-f.github.io/flood-it
-- **Local**: http://localhost:5000 (after docker compose up)
+Open `index.html` in a web browser to start playing.
 
 ## Local Development
 
-### With Docker
-
 ```bash
-docker compose up -d
-# Open http://localhost:5000
+# Using Python
+python3 -m http.server 8000
+
+# Using PHP
+php -S localhost:8000
 ```
 
-### Manual
+Then open http://localhost:8000
 
-Open `index.html` in your browser.
+## Structure
 
-## Run Tests
-
-```bash
-pip install pytest playwright
-playwright install chromium
-python -m pytest tests/ -v
+```
+games/
+├── index.html              # Dashboard
+├── games/
+│   ├── flood-it/         # Flood-It game
+│   └── word-search/      # Word Search game
+└── shared/
+    ├── css/              # Shared styles
+    └── js/               # Shared JavaScript
 ```
 
-## Architecture
+## Technology
 
-- **Frontend**: Pure HTML/CSS/JS (no dependencies)
-- **Storage**: localStorage for scores
-- **Docker**: Nginx for static hosting
-- **Deployment**: GitHub Pages + Docker
-
-## Features
-
-- [x] Difficulty slider (1-10)
-- [x] Quick Play & Challenge mode
-- [x] Timer (optional)
-- [x] Leaderboard by difficulty level
-- [x] Nickname persistence
-- [x] Multilingual support (English, Dutch)
-- [x] Flood fill algorithm
-- [x] Greedy solver for max_moves calculation
-- [x] E2E tests with Playwright
+- Pure HTML/CSS/JavaScript (no frameworks)
+- LocalStorage for progress/score saving
+- Responsive design for mobile and desktop
 
 ## License
 
 MIT
-
----
-
-Also available in: [Nederlands](README.nl.md)

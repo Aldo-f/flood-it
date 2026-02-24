@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Woordzoeker</title>
+    <link rel="stylesheet" href="../../shared/css/style.css">
+    <style>
+        /* Word Search specific styles */
+        .ws-container {
+            width: 100%;
+            max-width: 600px;
+        }
+        
+        /* Menu Screen */
+        .ws-menu {
+            text-align: center;
+        }
+        
+        .daily-badge {
+            display: inline-block;
+            background: linear-gradient(135deg, #f39c12, #e74c3c);
+            color: white;
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+        }
+        
+        .today-category {
+            background: #0f3460;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            color: #aaa;
+        }
+        
+        .today-category strong {
+            color: #e94560;
+        }
+        
+        .ws-settings {
+            text-align: left;
+        }
+        
+        .ws-settings .card {
+            padding: 20px;
+        }
+        
+        .ws-settings label {
+            margin-bottom: 15px;
+        }
+        
+        .ws-settings select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #0f3460;
+            border-radius: 10px;
+            font-size: 16px;
+            background: #0f3460;
+            color: #fff;
+            margin-top: 8px;
+        }
+        
+        .ws-settings select:focus {
+            outline: none;
+            border-color: #e94560;
+        }
+        
+        /* Game Screen */
+        .ws-game-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        .ws-game-info {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .ws-grid-container {
+            background: #16213e;
+            padding: 15px;
+            border-radius: 12px;
+            margin: 15px 0;
+            overflow-x: auto;
+        }
+        
+        .ws-grid {
+            display: grid;
+            gap: 2px;
+            background: #0a0a15;
+            padding: 4px;
+            border-radius: 8px;
+            margin: 0 auto;
+        }
+        
+        .ws-cell {
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #1a2744;
+            border-radius: 4px;
+            font-weight: bold;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        
+        .ws-cell:hover {
+            background: #243354;
+        }
+        
+        .ws-cell.selected {
+            background: #e94560;
+            color: white;
+        }
+        
+        .ws-cell.found {
+            background: #2ecc71;
+            color: white;
+            animation: foundPop 0.3s ease;
+        }
+        
+        .ws-cell.found.selected {
+            background: #27ae60;
+        }
+        
+        @keyframes foundPop {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+        
+        .ws-words-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: center;
+            margin: 15px 0;
+        }
+        
+        .ws-word {
+            padding: 6px 14px;
+            background: #16213e;
+            border-radius: 15px;
+            font-size: 13px;
+            color: #aaa;
+            transition: all 0.2s;
+        }
+        
+        .ws-word.found {
+            background: #2ecc71;
+            color: white;
+            text-decoration: line-through;
+        }
+        
+        /* Result Screen */
+        .ws-result {
+            text-align: center;
+        }
+        
+        .ws-result-score {
+            font-size: 64px;
+            font-weight: bold;
+            background: linear-gradient(135deg, #2ecc71, #3498db);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .ws-result-label {
+            color: #888;
+            margin-bottom: 20px;
+        }
+        
+        .ws-back-btn {
+            margin-top: 30px;
+        }
+        
+        /* Touch/Mobile */
+        @media (max-width: 500px) {
+            .ws-cell {
+                width: 28px;
+                height: 28px;
+                font-size: 14px;
+            }
+        }
+        
+        /* Selection line SVG overlay */
+        .ws-selection-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 10;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Language Switch -->
+        <div class="lang-switch">
+            <button class="lang-btn" data-lang="en" onclick="setLanguage('en')">EN</button>
+            <button class="lang-btn active" data-lang="nl" onclick="setLanguage('nl')">NL</button>
+        </div>
+
+        <!-- Menu Screen -->
+        <div id="menu-screen" class="screen active">
+            <h1>Woordzoeker</h1>
+            <p class="subtitle">Vind alle verborgen woorden</p>
+            
+            <div class="card ws-menu">
+                <div class="daily-badge" id="daily-badge">🌟 Dagelijkse Puzzle</div>
+                
+                <div class="today-category" id="today-category">
+                    <span id="today-label">Vandaag:</span> 
+                    <strong id="today-category-name">-</strong>
+                </div>
+                
+                <button class="btn btn-primary" onclick="startDailyPuzzle()">
+                    🔥 Speel Dagelijks
+                </button>
+                
+                <div style="margin: 20px 0; border-top: 1px solid #0f3460;"></div>
+                
+                <button class="btn btn-secondary" onclick="showCustomMenu()">
+                    ⚙️ Eigen Spel
+                </button>
+            </div>
+            
+            <div class="card ws-settings" id="custom-settings" style="display: none;">
+                <h3 data-i18n="settings">Instellingen</h3>
+                
+                <label>
+                    <span data-i18n="category">Categorie</span>
+                    <select id="category-select" onchange="updateCategoryPreview()">
+                        <option value="animals_nl">🐾 Dieren (NL)</option>
+                        <option value="animals_en">🐾 Dieren (EN)</option>
+                        <option value="food_nl">🍎 Eten (NL)</option>
+                        <option value="food_en">🍎 Eten (EN)</option>
+                        <option value="sports">⚽ Sport</option>
+                        <option value="latin_insects">🔬 Latijn - Insecten</option>
+                        <option value="latin_mushrooms">🍄 Latijn - Paddenstoelen</option>
+                        <option value="latin_plants">🌿 Latijn - Planten</option>
+                        <option value="random">🎲 Willekeurig</option>
+                    </select>
+                </label>
+                
+                <label>
+                    <span data-i18n="grid_size">Grid Grootte</span>
+                    <select id="grid-size-select">
+                        <option value="8">Klein (8x8)</option>
+                        <option value="10" selected>Medium (10x10)</option>
+                        <option value="12">Groot (12x12)</option>
+                        <option value="14">Extra Groot (14x14)</option>
+                    </select>
+                </label>
+                
+                <button class="btn btn-primary" onclick="startCustomGame()">
+                    ▶️ Spelen
+                </button>
+            </div>
+        </div>
+
+        <!-- Game Screen -->
+        <div id="game-screen" class="screen">
+            <div class="ws-game-header">
+                <div class="ws-game-info">
+                    <div class="stat">
+                        <div class="stat-label" data-i18n="found">Gevonden</div>
+                        <div class="stat-value"><span id="found-count">0</span>/<span id="total-count">0</span></div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-label" data-i18n="time">Tijd</div>
+                        <div class="stat-value timer" id="timer-display">0:00</div>
+                    </div>
+                </div>
+                <button class="btn btn-secondary" style="width: auto; padding: 10px 20px; margin: 0;" onclick="showMenu()">
+                    ↩ Menu
+                </button>
+            </div>
+            
+            <div class="ws-grid-container">
+                <div class="ws-grid" id="ws-grid"></div>
+            </div>
+            
+            <div class="ws-words-list" id="ws-words-list"></div>
+        </div>
+
+        <!-- Result Screen -->
+        <div id="result-screen" class="screen">
+            <div class="ws-result">
+                <h2 class="win-message" id="result-title">Gefeliciteerd!</h2>
+                <p class="ws-result-label" id="result-subtitle">Je hebt alle woorden gevonden!</p>
+                
+                <div class="ws-result-score" id="result-time">0:00</div>
+                <p class="result-label" data-i18n="your_time">Jouw tijd</p>
+                
+                <button class="btn btn-primary" onclick="showMenu()">
+                    Opnieuw Spelen
+                </button>
+                
+                <button class="btn btn-secondary ws-back-btn" onclick="goToDashboard()">
+                    Terug naar Spellen
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/grid-generator.js"></script>
+    <script src="js/wordlist.js"></script>
+    <script>
+        // Game State
+        let gameState = {
+            puzzle: null,
+            foundWords: [],
+            startTime: null,
+            timerInterval: null,
+            isSelecting: false,
+            selectionStart: null,
+            isDaily: false
+        };
+        
+        // Language
+        let currentLang = localStorage.getItem('games_lang') || 'nl';
+        
+        // DOM Elements
+        const menuScreen = document.getElementById('menu-screen');
+        const gameScreen = document.getElementById('game-screen');
+        const resultScreen = document.getElementById('result-screen');
+        
+        // Initialize
+        function init() {
+            setLanguage(currentLang);
+            updateTodayCategory();
+        }
+        
+        function setLanguage(lang) {
+            currentLang = lang;
+            localStorage.setItem('games_lang', lang);
+            
+            document.querySelectorAll('.lang-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.lang === lang);
+            });
+            
+            // Update texts
+            const texts = {
+                en: {
+                    subtitle: 'Find all hidden words',
+                    daily: 'Daily Puzzle',
+                    playDaily: '🔥 Play Daily',
+                    customGame: '⚙️ Custom Game',
+                    settings: 'Settings',
+                    category: 'Category',
+                    gridSize: 'Grid Size',
+                    play: '▶️ Play',
+                    found: 'Found',
+                    time: 'Time',
+                    yourTime: 'Your time',
+                    congratulations: 'Congratulations!',
+                    allFound: 'You found all the words!',
+                    today: 'Today:',
+                    menu: '↩ Menu'
+                },
+                nl: {
+                    subtitle: 'Vind alle verborgen woorden',
+                    daily: 'Dagelijkse Puzzle',
+                    playDaily: '🔥 Speel Dagelijks',
+                    customGame: '⚙️ Eigen Spel',
+                    settings: 'Instellingen',
+                    category: 'Categorie',
+                    gridSize: 'Grid Grootte',
+                    play: '▶️ Spelen',
+                    found: 'Gevonden',
+                    time: 'Tijd',
+                    yourTime: 'Jouw tijd',
+                    congratulations: 'Gefeliciteerd!',
+                    allFound: 'Je hebt alle woorden gevonden!',
+                    today: 'Vandaag:',
+                    menu: '↩ Menu'
+                }
+            };
+            
+            document.querySelector('.subtitle').textContent = texts[lang].subtitle;
+            document.getElementById('daily-badge').textContent = texts[lang].daily;
+            document.getElementById('today-label').textContent = texts[lang].today;
+            
+            updateTodayCategory();
+        }
+        
+        function updateTodayCategory() {
+            const daily = getDailyWords(new Date());
+            const categories = getCategories();
+            const cat = categories[daily.category];
+            
+            const catName = currentLang === 'nl' ? cat.nameNl : cat.nameEn;
+            document.getElementById('today-category-name').textContent = catName;
+        }
+        
+        function showScreen(screen) {
+            menuScreen.classList.remove('active');
+            gameScreen.classList.remove('active');
+            resultScreen.classList.remove('active');
+            
+            if (screen === 'menu') menuScreen.classList.add('active');
+            if (screen === 'game') gameScreen.classList.add('active');
+            if (screen === 'result') resultScreen.classList.add('active');
+        }
+        
+        function showCustomMenu() {
+            const settings = document.getElementById('custom-settings');
+            settings.style.display = settings.style.display === 'none' ? 'block' : 'none';
+        }
+        
+        // Daily Puzzle
+        function startDailyPuzzle() {
+            const date = new Date();
+            const dayOfWeek = date.getDay();
+            const isSunday = dayOfWeek === 0;
+            
+            // Get daily words
+            const daily = getDailyWords(date);
+            const gridSize = isSunday ? 12 : 10; // Bonus = larger grid
+            const wordCount = isSunday ? 10 : 8;
+            
+            const words = daily.words.slice(0, wordCount);
+            
+            // Generate puzzle
+            const generator = new WordSearchGenerator();
+            let puzzle = null;
+            
+            // Try to generate a valid puzzle
+            for (let i = 0; i < 50; i++) {
+                puzzle = generator.generate(words, gridSize, 20);
+                if (puzzle) break;
+            }
+            
+            if (!puzzle) {
+                alert('Kon geen geldige puzzle genereren. Probeer opnieuw.');
+                return;
+            }
+            
+            gameState.puzzle = puzzle;
+            gameState.foundWords = [];
+            gameState.isDaily = true;
+            
+            startGame();
+        }
+        
+        // Custom Game
+        function startCustomGame() {
+            const category = document.getElementById('category-select').value;
+            const gridSize = parseInt(document.getElementById('grid-size-select').value);
+            
+            // Get words based on category
+            let words;
+            if (category === 'random') {
+                const cats = Object.keys(WORD_LISTS).filter(k => k !== 'random');
+                const randomCat = cats[Math.floor(Math.random() * cats.length)];
+                words = getWordsForCategory(randomCat, gridSize === 8 ? 6 : gridSize === 10 ? 8 : 10);
+            } else {
+                words = getWordsForCategory(category, gridSize === 8 ? 6 : gridSize === 10 ? 8 : 10);
+            }
+            
+            if (words.length < 4) {
+                alert('Niet genoeg woorden beschikbaar voor deze categorie.');
+                return;
+            }
+            
+            // Generate puzzle
+            const generator = new WordSearchGenerator();
+            let puzzle = null;
+            
+            for (let i = 0; i < 50; i++) {
+                puzzle = generator.generate(words, gridSize, 20);
+                if (puzzle) break;
+            }
+            
+            if (!puzzle) {
+                alert('Kon geen geldige puzzle genereren. Probeer een andere categorie of grid grootte.');
+                return;
+            }
+            
+            gameState.puzzle = puzzle;
+            gameState.foundWords = [];
+            gameState.isDaily = false;
+            
+            startGame();
+        }
+        
+        function startGame() {
+            const { puzzle } = gameState;
+            
+            // Update UI
+            document.getElementById('found-count').textContent = '0';
+            document.getElementById('total-count').textContent = puzzle.words.length;
+            
+            // Render grid
+            renderGrid(puzzle);
+            
+            // Render word list
+            renderWordList(puzzle);
+            
+            // Start timer
+            gameState.startTime = Date.now();
+            startTimer();
+            
+            // Show game screen
+            showScreen('game');
+        }
+        
+        function renderGrid(puzzle) {
+            const { grid, gridSize } = puzzle;
+            const gridEl = document.getElementById('ws-grid');
+            
+            gridEl.style.gridTemplateColumns = `repeat(${gridSize}, 1fr)`;
+            gridEl.innerHTML = '';
+            
+            for (let y = 0; y < gridSize; y++) {
+                for (let x = 0; x < gridSize; x++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'ws-cell';
+                    cell.textContent = grid[y][x];
+                    cell.dataset.x = x;
+                    cell.dataset.y = y;
+                    
+                    // Mouse events
+                    cell.addEventListener('mousedown', handleCellMouseDown);
+                    cell.addEventListener('mouseenter', handleCellMouseEnter);
+                    cell.addEventListener('mouseup', handleCellMouseUp);
+                    
+                    // Touch events
+                    cell.addEventListener('touchstart', handleTouchStart, { passive: false });
+                    cell.addEventListener('touchmove', handleTouchMove, { passive: false });
+                    cell.addEventListener('touchend', handleTouchEnd);
+                    
+                    gridEl.appendChild(cell);
+                }
+            }
+            
+            // Global mouseup
+            document.addEventListener('mouseup', () => {
+                if (gameState.isSelecting) {
+                    endSelection();
+                }
+            });
+        }
+        
+        function renderWordList(puzzle) {
+            const listEl = document.getElementById('ws-words-list');
+            listEl.innerHTML = '';
+            
+            puzzle.words.forEach(wordObj => {
+                const word = document.createElement('span');
+                word.className = 'ws-word';
+                word.textContent = wordObj.word;
+                word.dataset.word = wordObj.word;
+                listEl.appendChild(word);
+            });
+        }
+        
+        // Selection handling
+        function handleCellMouseDown(e) {
+            e.preventDefault();
+            const x = parseInt(e.target.dataset.x);
+            const y = parseInt(e.target.dataset.y);
+            
+            gameState.isSelecting = true;
+            gameState.selectionStart = { x, y };
+            
+            highlightCells(x, y, x, y);
+        }
+        
+        function handleCellMouseEnter(e) {
+            if (!gameState.isSelecting) return;
+            
+            const x = parseInt(e.target.dataset.x);
+            const y = parseInt(e.target.dataset.y);
+            
+            highlightCells(gameState.selectionStart.x, gameState.selectionStart.y, x, y);
+        }
+        
+        function handleCellMouseUp(e) {
+            if (gameState.isSelecting) {
+                endSelection();
+            }
+        }
+        
+        // Touch handling
+        function handleTouchStart(e) {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const cell = document.elementFromPoint(touch.clientX, touch.clientY);
+            if (!cell || !cell.classList.contains('ws-cell')) return;
+            
+            const x = parseInt(cell.dataset.x);
+            const y = parseInt(cell.dataset.y);
+            
+            gameState.isSelecting = true;
+            gameState.selectionStart = { x, y };
+            
+            highlightCells(x, y, x, y);
+        }
+        
+        function handleTouchMove(e) {
+            e.preventDefault();
+            if (!gameState.isSelecting) return;
+            
+            const touch = e.touches[0];
+            const cell = document.elementFromPoint(touch.clientX, touch.clientY);
+            if (!cell || !cell.classList.contains('ws-cell')) return;
+            
+            const x = parseInt(cell.dataset.x);
+            const y = parseInt(cell.dataset.y);
+            
+            highlightCells(gameState.selectionStart.x, gameState.selectionStart.y, x, y);
+        }
+        
+        function handleTouchEnd(e) {
+            if (gameState.isSelecting) {
+                endSelection();
+            }
+        }
+        
+        function highlightCells(x1, y1, x2, y2) {
+            // Clear previous selection
+            document.querySelectorAll('.ws-cell.selected').forEach(cell => {
+                if (!cell.classList.contains('found')) {
+                    cell.classList.remove('selected');
+                }
+            });
+            
+            // Calculate direction
+            const dx = Math.sign(x2 - x1);
+            const dy = Math.sign(y2 - y1);
+            const length = Math.max(Math.abs(x2 - x1), Math.abs(y2 - y1));
+            
+            // Select cells in line
+            for (let i = 0; i <= length; i++) {
+                const x = x1 + (dx * i);
+                const y = y1 + (dy * i);
+                const cell = document.querySelector(`.ws-cell[data-x="${x}"][data-y="${y}"]`);
+                if (cell) {
+                    cell.classList.add('selected');
+                }
+            }
+        }
+        
+        function endSelection() {
+            gameState.isSelecting = false;
+            
+            // Get selected cells
+            const selectedCells = document.querySelectorAll('.ws-cell.selected');
+            if (selectedCells.length < 2) {
+                clearSelection();
+                return;
+            }
+            
+            const x1 = parseInt(selectedCells[0].dataset.x);
+            const y1 = parseInt(selectedCells[0].dataset.y);
+            const x2 = parseInt(selectedCells[selectedCells.length - 1].dataset.x);
+            const y2 = parseInt(selectedCells[selectedCells.length - 1].dataset.y);
+            
+            // Check if it matches a word
+            const { puzzle } = gameState;
+            const matchedWord = checkWord(puzzle, x1, y1, x2, y2);
+            
+            if (matchedWord && !gameState.foundWords.includes(matchedWord.word)) {
+                // Found a new word!
+                gameState.foundWords.push(matchedWord.word);
+                
+                // Mark cells as found
+                selectedCells.forEach(cell => cell.classList.add('found'));
+                
+                // Mark word in list
+                document.querySelector(`.ws-word[data-word="${matchedWord.word}"]`).classList.add('found');
+                
+                // Update counter
+                document.getElementById('found-count').textContent = gameState.foundWords.length;
+                
+                // Check win
+                if (gameState.foundWords.length === puzzle.words.length) {
+                    setTimeout(handleWin, 500);
+                }
+            }
+            
+            clearSelection();
+        }
+        
+        function checkWord(puzzle, x1, y1, x2, y2) {
+            const generator = new WordSearchGenerator();
+            return generator.checkSelection(puzzle, x1, y1, x2, y2);
+        }
+        
+        function clearSelection() {
+            document.querySelectorAll('.ws-cell.selected').forEach(cell => {
+                cell.classList.remove('selected');
+            });
+        }
+        
+        // Timer
+        function startTimer() {
+            if (gameState.timerInterval) clearInterval(gameState.timerInterval);
+            
+            gameState.timerInterval = setInterval(() => {
+                const elapsed = Math.floor((Date.now() - gameState.startTime) / 1000);
+                const minutes = Math.floor(elapsed / 60);
+                const seconds = elapsed % 60;
+                document.getElementById('timer-display').textContent = 
+                    `${minutes}:${seconds.toString().padStart(2, '0')}`;
+            }, 1000);
+        }
+        
+        function stopTimer() {
+            if (gameState.timerInterval) {
+                clearInterval(gameState.timerInterval);
+                gameState.timerInterval = null;
+            }
+        }
+        
+        function getElapsedTime() {
+            return Math.floor((Date.now() - gameState.startTime) / 1000);
+        }
+        
+        // Win handling
+        function handleWin() {
+            stopTimer();
+            
+            const elapsed = getElapsedTime();
+            const minutes = Math.floor(elapsed / 60);
+            const seconds = elapsed % 60;
+            
+            document.getElementById('result-time').textContent = 
+                `${minutes}:${seconds.toString().padStart(2, '0')}`;
+            
+            // Save score if daily
+            if (gameState.isDaily) {
+                saveDailyScore(elapsed);
+            }
+            
+            showScreen('result');
+        }
+        
+        function saveDailyScore(time) {
+            const today = new Date().toISOString().split('T')[0];
+            const key = 'wordsearch_daily';
+            
+            const data = JSON.parse(localStorage.getItem(key) || '{}');
+            data[today] = { completed: true, time };
+            
+            localStorage.setItem(key, JSON.stringify(data));
+        }
+        
+        // Navigation
+        function showMenu() {
+            stopTimer();
+            showScreen('menu');
+        }
+        
+        function goToDashboard() {
+            window.location.href = '../../index.html';
+        }
+        
+        // Initialize on load
+        init();
+    </script>
+</body>
+</html>
