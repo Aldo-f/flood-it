@@ -103,12 +103,6 @@
         .display-option-btn.active { background: #e94560; border-color: #e94560; color: white; }
         .display-option-btn:hover:not(.active) { border-color: #e94560; color: #fff; }
         
-        /* High brightness colors */
-        .cell.high-brightness { filter: brightness(1.3); }
-        
-        /* Black & white mode */
-        .cell.bw-mode { filter: grayscale(100%) contrast(1.2); }
-        
         /* Numbers on cells */
         .cell-number { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 14px; color: white; text-shadow: 0 0 3px rgba(0,0,0,0.8), 0 0 1px rgba(0,0,0,1); pointer-events: none; }
         
@@ -155,32 +149,12 @@
                 <input type="range" id="difficulty" min="1" max="10" value="5" oninput="updateDifficulty()">
                 <div class="slider-label" style="margin-top: 8px;"><span data-i18n="easy">Easy</span><span data-i18n="hard">Hard</span></div>
             </div>
-            <div class="settings-toggle">
-                <span data-i18n="timer_enable">Enable timer</span>
-                <label class="toggle-switch">
-                    <input type="checkbox" id="timer-toggle">
-                    <span class="toggle-slider"></span>
-                </label>
-            </div>
-            <div id="timer-info" style="display: none; margin-top: 10px; color: #666; font-size: 12px;">
-                <span data-i18n="timer">Timer</span>: <span id="timer-duration">65</span> <span data-i18n="seconds">seconds</span>
-            </div>
             <div class="display-section">
                 <div class="display-section-title" data-i18n="display_mode">Display</div>
                 <div class="display-options">
                     <button class="display-option-btn active" data-display="colors" data-i18n="colors">Colors</button>
                     <button class="display-option-btn" data-display="numbers" data-i18n="numbers">Numbers</button>
                     <button class="display-option-btn" data-display="dice" data-i18n="dice">Dice</button>
-                </div>
-                <div class="display-section-title" data-i18n="brightness">Brightness</div>
-                <div class="display-options">
-                    <button class="display-option-btn brightness-btn active" data-brightness="normal" data-i18n="normal">Normal</button>
-                    <button class="display-option-btn brightness-btn" data-brightness="high" data-i18n="high">High</button>
-                </div>
-                <div class="display-section-title" data-i18n="contrast_mode">Contrast</div>
-                <div class="display-options">
-                    <button class="display-option-btn contrast-btn active" data-contrast="color" data-i18n="color">Color</button>
-                    <button class="display-option-btn contrast-btn" data-contrast="bw" data-i18n="bw">B&W</button>
                 </div>
             </div>
         </div>
@@ -197,7 +171,6 @@
                 <button class="leaderboard-tab" data-diff="6">6</button>
                 <button class="leaderboard-tab" data-diff="7">7</button>
                 <button class="leaderboard-tab" data-diff="8">8</button>
-                <button class="leaderboard-tab" data-diff="9">9</button>
                 <button class="leaderboard-tab" data-diff="10">10</button>
             </div>
             <div id="leaderboard-list"></div>
@@ -352,8 +325,6 @@
         let hintsUsed = 0;
         let undosUsed = 0;
         let displayMode = "colors";
-        let brightnessMode = "normal";
-        let contrastMode = "color";
         let compactMode = false;
 
         function t(key) {
@@ -415,34 +386,10 @@
             });
         });
 
-        document.querySelectorAll(".brightness-btn").forEach(btn => {
-            btn.addEventListener("click", () => {
-                document.querySelectorAll(".brightness-btn").forEach(b => b.classList.remove("active"));
-                btn.classList.add("active");
-                brightnessMode = btn.dataset.brightness;
-                localStorage.setItem("floodit_brightness", brightnessMode);
-                if (game) renderGame();
-            });
-        });
-
-        document.querySelectorAll(".contrast-btn").forEach(btn => {
-            btn.addEventListener("click", () => {
-                document.querySelectorAll(".contrast-btn").forEach(b => b.classList.remove("active"));
-                btn.classList.add("active");
-                contrastMode = btn.dataset.contrast;
-                localStorage.setItem("floodit_contrast", contrastMode);
-                if (game) renderGame();
-            });
-        });
-
         function updateDifficulty() {
             const value = parseInt(document.getElementById("difficulty").value);
             document.getElementById("difficulty-label").textContent = value;
-            const times = {1: 45, 2: 50, 3: 55, 4: 60, 5: 65, 6: 70, 7: 75, 8: 85, 9: 95, 10: 105};
-            document.getElementById("timer-duration").textContent = times[value];
-            document.getElementById("timer-info").style.display = document.getElementById("timer-toggle").checked ? "block" : "none";
         }
-        document.getElementById("timer-toggle").addEventListener("change", updateDifficulty);
 
         function showScreen(screenId) {
             document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
@@ -573,7 +520,7 @@
             localStorage.setItem("floodit_nickname", nickname);
 
             const difficulty = parseInt(document.getElementById("difficulty").value);
-            const timerEnabled = document.getElementById("timer-toggle").checked;
+            const timerEnabled = currentMode === "challenge"; // Timer always on for challenge
             const settings = DIFFICULTY_SETTINGS[difficulty];
 
             let gridSize = settings.grid;
@@ -843,13 +790,6 @@
                 });
                 cell.appendChild(diceEl);
             }
-            
-            if (brightnessMode === "high") {
-                cell.classList.add("high-brightness");
-            }
-            if (contrastMode === "bw") {
-                cell.classList.add("bw-mode");
-            }
         }
 
         function nextBoard() {
@@ -932,17 +872,9 @@
         
         // Load display settings
         displayMode = localStorage.getItem("floodit_display") || "colors";
-        brightnessMode = localStorage.getItem("floodit_brightness") || "normal";
-        contrastMode = localStorage.getItem("floodit_contrast") || "color";
         
         document.querySelectorAll(".display-option-btn[data-display]").forEach(btn => {
             btn.classList.toggle("active", btn.dataset.display === displayMode);
-        });
-        document.querySelectorAll(".brightness-btn").forEach(btn => {
-            btn.classList.toggle("active", btn.dataset.brightness === brightnessMode);
-        });
-        document.querySelectorAll(".contrast-btn").forEach(btn => {
-            btn.classList.toggle("active", btn.dataset.contrast === contrastMode);
         });
         
         loadLeaderboard();
