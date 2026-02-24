@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sudoku</title>
+    <link rel="stylesheet" href="../../shared/css/style.css">
+    <style>
+        .sudoku-container { width: 100%; max-width: 500px; }
+        
+        .sudoku-grid-container {
+            background: #16213e;
+            padding: 10px;
+            border-radius: 12px;
+            margin: 20px 0;
+        }
+        
+        .sudoku-grid {
+            display: grid;
+            grid-template-columns: repeat(9, 1fr);
+            gap: 1px;
+            background: #0a0a15;
+            border: 2px solid #0f3460;
+        }
+        
+        .sudoku-cell {
+            width: 38px;
+            height: 38px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #1a2744;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.1s ease;
+            color: #eee;
+        }
+        
+        .sudoku-cell:nth-child(3n) { border-right: 2px solid #0f3460; }
+        .sudoku-cell:nth-child(9n) { border-right: none; }
+        .sudoku-cell:nth-child(n+19):nth-child(-n+27),
+        .sudoku-cell:nth-child(n+46):nth-child(-n+54) {
+            border-bottom: 2px solid #0f3460;
+        }
+        
+        .sudoku-cell:hover { background: #243354; }
+        
+        .sudoku-cell.fixed {
+            background: #0f3460;
+            color: #e94560;
+            cursor: default;
+        }
+        
+        .sudoku-cell.selected {
+            background: #e94560 !important;
+            color: white !important;
+        }
+        
+        .sudoku-cell.conflict {
+            background: rgba(231, 76, 60, 0.3) !important;
+        }
+        
+        .sudoku-cell.highlight {
+            background: #243354;
+        }
+        
+        .number-pad {
+            display: grid;
+            grid-template-columns: repeat(9, 1fr);
+            gap: 5px;
+            margin: 15px 0;
+        }
+        
+        .num-btn {
+            padding: 12px;
+            background: #16213e;
+            border: 2px solid #0f3460;
+            border-radius: 8px;
+            color: #eee;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .num-btn:hover {
+            border-color: #e94560;
+            background: #1a2744;
+        }
+        
+        .difficulty-select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #0f3460;
+            border-radius: 10px;
+            font-size: 16px;
+            background: #0f3460;
+            color: #fff;
+            margin-top: 8px;
+        }
+        
+        @media (max-width: 400px) {
+            .sudoku-cell {
+                width: 32px;
+                height: 32px;
+                font-size: 14px;
+            }
+            .number-pad { grid-template-columns: repeat(5, 1fr); }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <div class="lang-switch">
+            <button class="lang-btn" onclick="setLanguage('en')">EN</button>
+            <button class="lang-btn active" onclick="setLanguage('nl')">NL</button>
+        </div>
+        
+        <h1>🧩 Sudoku</h1>
+        <p class="subtitle">Vul het raster in met cijfers 1-9</p>
+        
+        <div class="card">
+            <label>
+                <span data-i18n="difficulty">Moeilijkheid</span>
+                <select class="difficulty-select" id="difficulty" onchange="startGame()">
+                    <option value="easy">Easy</option>
+                    <option value="normal" selected>Normal</option>
+                    <option value="hard">Hard</option>
+                </select>
+            </label>
+            
+            <button class="btn btn-primary" onclick="startDailyPuzzle()">
+                🔥 Dagelijkse Puzzle
+            </button>
+        </div>
+        
+        <div class="sudoku-grid-container">
+            <div class="sudoku-grid" id="sudoku-grid"></div>
+        </div>
+        
+        <div class="number-pad" id="number-pad"></div>
+        
+        <div class="game-tools">
+            <button class="tool-btn" onclick="undoMove()" id="undo-btn" disabled>↩ UNDO</button>
+            <button class="tool-btn" onclick="clearCell()">⌫ WISSEN</button>
+            <button class="tool-btn" onclick="newGame()">🔄 NIEUW</button>
+        </div>
+        
+        <button class="btn btn-secondary" onclick="goToDashboard()">← Terug naar Spellen</button>
+    </div>
+
+    <script src="js/sudoku.js"></script>
+    <script>
+        let game = null;
+        let grid = [];
+        let solution = [];
+        let fixed = [];
+        let selected = null;
+        let history = [];
+        let currentLang = localStorage.getItem('games_lang') || 'nl';
+        
+        function setLanguage(lang) {
+            currentLang = lang;
+            localStorage.setItem('games_lang', lang);
+            document.querySelectorAll('.lang-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.textContent.toLowerCase() === lang);
+            });
+            
+            const texts = {
+                en: { subtitle: 'Fill the grid with numbers 1-9', difficulty: 'Difficulty', daily: 'Daily Puzzle' },
+                nl: { subtitle: 'Vul het raster in met cijfers 1-9', difficulty: 'Moeilijkheid', daily: 'Dagelijkse Puzzle' }
+            };
+            
+            document.querySelector('.subtitle').textContent = texts[lang].subtitle;
+        }
+        
+        function startDailyPuzzle() {
+            startGame();
+        }
+        
+        function newGame() {
+            startGame();
+        }
+        
+        function startGame() {
+            const difficulty = document.getElementById('difficulty').value;
+            const generator = new SudokuGenerator();
+            
+            let puzzle = null;
+            for (let i = 0; i < 10; i++) {
+                puzzle = generator.generate(difficulty);
+                if (puzzle) break;
+            }
+            
+            if (!puzzle) {
+                alert('Kon geen puzzle genereren');
+                return;
+            }
+            
+            game = puzzle;
+            grid = puzzle.puzzle.map(row => [...row]);
+            solution = puzzle.solution.map(row => [...row]);
+            fixed = grid.map((row, r) => row.map((cell, c) => cell !== 0));
+            history = [];
+            selected = null;
+            
+            renderGrid();
+            renderNumberPad();
+        }
+        
+        function renderGrid() {
+            const gridEl = document.getElementById('sudoku-grid');
+            gridEl.innerHTML = '';
+            
+            const conflicts = new SudokuGenerator().getConflicts(grid);
+            
+            for (let r = 0; r < 9; r++) {
+                for (let c = 0; c < 9; c++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'sudoku-cell';
+                    
+                    if (fixed[r][c]) {
+                        cell.classList.add('fixed');
+                    }
+                    
+                    if (selected && selected.r === r && selected.c === c) {
+                        cell.classList.add('selected');
+                    }
+                    
+                    if (conflicts.has(`${r},${c}`)) {
+                        cell.classList.add('conflict');
+                    }
+                    
+                    // Highlight same row/col/box
+                    if (selected) {
+                        if (r === selected.r || c === selected.c || 
+                            (Math.floor(r/3) === Math.floor(selected.r/3) && Math.floor(c/3) === Math.floor(selected.c/3))) {
+                            cell.classList.add('highlight');
+                        }
+                    }
+                    
+                    cell.textContent = grid[r][c] || '';
+                    cell.dataset.r = r;
+                    cell.dataset.c = c;
+                    
+                    cell.onclick = () => selectCell(r, c);
+                    gridEl.appendChild(cell);
+                }
+            }
+        }
+        
+        function renderNumberPad() {
+            const pad = document.getElementById('number-pad');
+            pad.innerHTML = '';
+            
+            for (let i = 1; i <= 9; i++) {
+                const btn = document.createElement('button');
+                btn.className = 'num-btn';
+                btn.textContent = i;
+                btn.onclick = () => inputNumber(i);
+                pad.appendChild(btn);
+            }
+        }
+        
+        function selectCell(r, c) {
+            selected = { r, c };
+            renderGrid();
+        }
+        
+        function inputNumber(num) {
+            if (!selected) return;
+            const { r, c } = selected;
+            
+            if (fixed[r][c]) return;
+            
+            history.push(grid.map(row => [...row]));
+            
+            if (grid[r][c] === num) {
+                grid[r][c] = 0;
+            } else {
+                grid[r][c] = num;
+            }
+            
+            document.getElementById('undo-btn').disabled = history.length === 0;
+            renderGrid();
+            checkWin();
+        }
+        
+        function clearCell() {
+            if (!selected) return;
+            const { r, c } = selected;
+            
+            if (fixed[r][c]) return;
+            
+            history.push(grid.map(row => [...row]));
+            grid[r][c] = 0;
+            
+            document.getElementById('undo-btn').disabled = history.length === 0;
+            renderGrid();
+        }
+        
+        function undoMove() {
+            if (history.length === 0) return;
+            grid = history.pop();
+            document.getElementById('undo-btn').disabled = history.length === 0;
+            renderGrid();
+        }
+        
+        function checkWin() {
+            const generator = new SudokuGenerator();
+            if (generator.checkWin(grid)) {
+                setTimeout(() => {
+                    alert('🎉 Gefeliciteerd! Je hebt gewonnen!');
+                }, 100);
+            }
+        }
+        
+        function goToDashboard() {
+            window.location.href = '../../index.html';
+        }
+        
+        // Keyboard support
+        document.addEventListener('keydown', (e) => {
+            if (!selected) return;
+            if (e.key >= '1' && e.key <= '9') {
+                inputNumber(parseInt(e.key));
+            } else if (e.key === 'Backspace' || e.key === 'Delete') {
+                clearCell();
+            } else if (e.key === 'ArrowUp' && selected.r > 0) {
+                selectCell(selected.r - 1, selected.c);
+            } else if (e.key === 'ArrowDown' && selected.r < 8) {
+                selectCell(selected.r + 1, selected.c);
+            } else if (e.key === 'ArrowLeft' && selected.c > 0) {
+                selectCell(selected.r, selected.c - 1);
+            } else if (e.key === 'ArrowRight' && selected.c < 8) {
+                selectCell(selected.r, selected.c + 1);
+            }
+        });
+        
+        // Initialize
+        setLanguage(currentLang);
+        startGame();
+    </script>
+</body>
+</html>

@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Queens</title>
+    <link rel="stylesheet" href="../../shared/css/style.css">
+    <style>
+        .queens-container { width: 100%; max-width: 500px; }
+        
+        .queens-grid-container {
+            background: #16213e;
+            padding: 15px;
+            border-radius: 12px;
+            margin: 20px 0;
+            overflow-x: auto;
+        }
+        
+        .queens-grid {
+            display: grid;
+            gap: 2px;
+            margin: 0 auto;
+        }
+        
+        .queens-cell {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 24px;
+            transition: all 0.15s ease;
+            position: relative;
+        }
+        
+        .queens-cell.region-0 { background: #2c3e50; }
+        .queens-cell.region-1 { background: #34495e; }
+        .queens-cell.region-2 { background: #3d566e; }
+        .queens-cell.region-3 { background: #4a6572; }
+        .queens-cell.region-4 { background: #527175; }
+        .queens-cell.region-5 { background: #597779; }
+        .queens-cell.region-6 { background: #61837d; }
+        .queens-cell.region-7 { background: #698f81; }
+        .queens-cell.region-8 { background: #719b85; }
+        .queens-cell.region-9 { background: #79a789; }
+        
+        .queens-cell:hover { filter: brightness(1.2); }
+        
+        .queens-cell .queen {
+            font-size: 28px;
+            z-index: 2;
+        }
+        
+        .queens-cell .conflict {
+            position: absolute;
+            inset: 0;
+            background: rgba(231, 76, 60, 0.5);
+            z-index: 1;
+        }
+        
+        .queens-cell .attack {
+            position: absolute;
+            inset: 0;
+            background: rgba(231, 76, 60, 0.3);
+            z-index: 0;
+        }
+        
+        .difficulty-select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #0f3460;
+            border-radius: 10px;
+            font-size: 16px;
+            background: #0f3460;
+            color: #fff;
+            margin-top: 8px;
+        }
+        
+        .queens-info {
+            text-align: center;
+            margin: 15px 0;
+            color: #888;
+        }
+        
+        .queens-info span {
+            color: #e94560;
+            font-weight: bold;
+        }
+        
+        @media (max-width: 500px) {
+            .queens-cell {
+                width: 32px;
+                height: 32px;
+                font-size: 20px;
+            }
+            .queens-cell .queen { font-size: 22px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <div class="lang-switch">
+            <button class="lang-btn" onclick="setLanguage('en')">EN</button>
+            <button class="lang-btn active" onclick="setLanguage('nl')">NL</button>
+        </div>
+        
+        <h1>👑 Queens</h1>
+        <p class="subtitle">Plaats een koningin per rij, kolom en kleur</p>
+        
+        <div class="card">
+            <label>
+                <span data-i18n="difficulty">Moeilijkheid</span>
+                <select class="difficulty-select" id="difficulty" onchange="startGame()">
+                    <option value="6">6x6 - Easy</option>
+                    <option value="7">7x7 - Medium</option>
+                    <option value="8" selected>8x8 - Normal</option>
+                    <option value="9">9x9 - Hard</option>
+                    <option value="10">10x10 - Expert</option>
+                </select>
+            </label>
+            
+            <button class="btn btn-primary" onclick="startDailyPuzzle()">
+                🔥 Dagelijkse Puzzle
+            </button>
+        </div>
+        
+        <div class="queens-grid-container">
+            <div class="queens-grid" id="queens-grid"></div>
+        </div>
+        
+        <div class="queens-info">
+            <span id="queens-count">0</span> / <span id="queens-total">8</span> koninginnen
+        </div>
+        
+        <div class="game-tools">
+            <button class="tool-btn" onclick="undoMove()" id="undo-btn" disabled>↩ UNDO</button>
+            <button class="tool-btn" onclick="clearBoard()">🗑️ CLEAR</button>
+            <button class="tool-btn" onclick="showHint()">💡 HINT</button>
+        </div>
+        
+        <button class="btn btn-secondary" onclick="goToDashboard()">← Terug naar Spellen</button>
+    </div>
+
+    <script src="js/queens.js"></script>
+    <script>
+        let game = null;
+        let history = [];
+        let currentLang = localStorage.getItem('games_lang') || 'nl';
+        
+        const regionColors = [
+            '#2c3e50', '#34495e', '#3d566e', '#4a6572',
+            '#527175', '#597779', '#61837d', '#698f81',
+            '#719b85', '#79a789'
+        ];
+        
+        function setLanguage(lang) {
+            currentLang = lang;
+            localStorage.setItem('games_lang', lang);
+            document.querySelectorAll('.lang-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.textContent.toLowerCase() === lang);
+            });
+            
+            const texts = {
+                en: { subtitle: 'Place one queen per row, column, and color', difficulty: 'Difficulty', daily: 'Daily Puzzle' },
+                nl: { subtitle: 'Plaats een koningin per rij, kolom en kleur', difficulty: 'Moeilijkheid', daily: 'Dagelijkse Puzzle' }
+            };
+            
+            document.querySelector('.subtitle').textContent = texts[lang].subtitle;
+        }
+        
+        function startDailyPuzzle() {
+            const size = parseInt(document.getElementById('difficulty').value);
+            const seed = new Date().toISOString().split('T')[0];
+            Math.seedrandom(seed);
+            startGame();
+        }
+        
+        function startGame() {
+            const size = parseInt(document.getElementById('difficulty').value);
+            const generator = new QueensGenerator();
+            
+            let puzzle = null;
+            for (let i = 0; i < 20; i++) {
+                puzzle = generator.generate(size);
+                if (puzzle) break;
+            }
+            
+            if (!puzzle) {
+                alert('Kon geen puzzle genereren');
+                return;
+            }
+            
+            game = {
+                puzzle: puzzle.puzzle.map(row => [...row]),
+                regions: puzzle.regions,
+                size: size,
+                solution: puzzle.solution
+            };
+            
+            history = [];
+            document.getElementById('queens-total').textContent = size;
+            updateCount();
+            renderGrid();
+        }
+        
+        function renderGrid() {
+            const grid = document.getElementById('queens-grid');
+            const size = game.size;
+            
+            grid.style.gridTemplateColumns = `repeat(${size}, 1fr)`;
+            grid.innerHTML = '';
+            
+            for (let y = 0; y < size; y++) {
+                for (let x = 0; x < size; x++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'queens-cell';
+                    cell.style.backgroundColor = regionColors[game.regions[y][x] % regionColors.length];
+                    cell.dataset.x = x;
+                    cell.dataset.y = y;
+                    
+                    if (game.puzzle[y][x] === 'Q') {
+                        cell.innerHTML = '<span class="queen">♛</span>';
+                    }
+                    
+                    cell.onclick = () => toggleQueen(x, y);
+                    grid.appendChild(cell);
+                }
+            }
+        }
+        
+        function toggleQueen(x, y) {
+            history.push(game.puzzle.map(row => [...row]));
+            
+            if (game.puzzle[y][x] === 'Q') {
+                game.puzzle[y][x] = null;
+            } else {
+                game.puzzle[y][x] = 'Q';
+            }
+            
+            document.getElementById('undo-btn').disabled = history.length === 0;
+            updateCount();
+            renderGrid();
+            checkWin();
+        }
+        
+        function updateCount() {
+            let count = 0;
+            for (let y = 0; y < game.size; y++) {
+                for (let x = 0; x < game.size; x++) {
+                    if (game.puzzle[y][x] === 'Q') count++;
+                }
+            }
+            document.getElementById('queens-count').textContent = count;
+        }
+        
+        function undoMove() {
+            if (history.length === 0) return;
+            game.puzzle = history.pop();
+            document.getElementById('undo-btn').disabled = history.length === 0;
+            updateCount();
+            renderGrid();
+        }
+        
+        function clearBoard() {
+            history.push(game.puzzle.map(row => [...row]));
+            game.puzzle = game.puzzle.map(row => row.map(() => null));
+            document.getElementById('undo-btn').disabled = false;
+            updateCount();
+            renderGrid();
+        }
+        
+        function showHint() {
+            // Find first empty region and show where queen should go
+            for (let y = 0; y < game.size; y++) {
+                for (let x = 0; x < game.size; x++) {
+                    if (game.solution[y][x] === 'Q' && game.puzzle[y][x] !== 'Q') {
+                        game.puzzle[y][x] = 'Q';
+                        updateCount();
+                        renderGrid();
+                        checkWin();
+                        return;
+                    }
+                }
+            }
+        }
+        
+        function checkWin() {
+            const generator = new QueensGenerator();
+            if (generator.checkWin(game.puzzle, game.regions)) {
+                setTimeout(() => {
+                    alert('🎉 Gefeliciteerd! Je hebt gewonnen!');
+                }, 100);
+            }
+        }
+        
+        function goToDashboard() {
+            window.location.href = '../../index.html';
+        }
+        
+        // Initialize
+        setLanguage(currentLang);
+        startGame();
+    </script>
+</body>
+</html>

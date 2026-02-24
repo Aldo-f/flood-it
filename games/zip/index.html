@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zip</title>
+    <link rel="stylesheet" href="../../shared/css/style.css">
+    <style>
+        .zip-container { width: 100%; max-width: 500px; }
+        
+        .zip-grid-container {
+            background: #16213e;
+            padding: 15px;
+            border-radius: 12px;
+            margin: 20px 0;
+        }
+        
+        .zip-grid {
+            display: grid;
+            gap: 3px;
+            margin: 0 auto;
+        }
+        
+        .zip-cell {
+            width: 45px;
+            height: 45px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #1a2744;
+            border-radius: 6px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            position: relative;
+        }
+        
+        .zip-cell:hover { background: #243354; }
+        
+        .zip-cell.number {
+            background: #0f3460;
+            color: #e94560;
+        }
+        
+        .zip-cell.filled {
+            background: #2ecc71;
+            color: white;
+        }
+        
+        .zip-cell.current {
+            background: #e94560;
+            color: white;
+            box-shadow: 0 0 15px rgba(233, 69, 96, 0.5);
+        }
+        
+        .zip-cell .path-line {
+            position: absolute;
+            background: #2ecc71;
+            z-index: 1;
+        }
+        
+        .zip-cell .path-line.horizontal {
+            height: 4px;
+            width: 100%;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+        
+        .zip-cell .path-line.vertical {
+            width: 4px;
+            height: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        
+        .zip-info {
+            text-align: center;
+            margin: 15px 0;
+            color: #888;
+        }
+        
+        .zip-info span {
+            color: #e94560;
+            font-weight: bold;
+        }
+        
+        .difficulty-select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #0f3460;
+            border-radius: 10px;
+            font-size: 16px;
+            background: #0f3460;
+            color: #fff;
+            margin-top: 8px;
+        }
+        
+        @media (max-width: 450px) {
+            .zip-cell {
+                width: 36px;
+                height: 36px;
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <div class="lang-switch">
+            <button class="lang-btn" onclick="setLanguage('en')">EN</button>
+            <button class="lang-btn active" onclick="setLanguage('nl')">NL</button>
+        </div>
+        
+        <h1>📦 Zip</h1>
+        <p class="subtitle">Verbind de cijfers in volgorde en vul alle vakjes</p>
+        
+        <div class="card">
+            <label>
+                <span data-i18n="difficulty">Grootte</span>
+                <select class="difficulty-select" id="size" onchange="startGame()">
+                    <option value="4">4x4 - Easy</option>
+                    <option value="5" selected>5x5 - Normal</option>
+                    <option value="6">6x6 - Hard</option>
+                    <option value="7">7x7 - Expert</option>
+                </select>
+            </label>
+            
+            <button class="btn btn-primary" onclick="startDailyPuzzle()">
+                🔥 Dagelijkse Puzzle
+            </button>
+        </div>
+        
+        <div class="zip-grid-container">
+            <div class="zip-grid" id="zip-grid"></div>
+        </div>
+        
+        <div class="zip-info">
+            Volgend nummer: <span id="next-number">1</span> / <span id="total-numbers">25</span>
+        </div>
+        
+        <div class="game-tools">
+            <button class="tool-btn" onclick="undoMove()" id="undo-btn" disabled>↩ UNDO</button>
+            <button class="tool-btn" onclick="clearPath()">🗑️ CLEAR</button>
+        </div>
+        
+        <button class="btn btn-secondary" onclick="goToDashboard()">← Terug naar Spellen</button>
+    </div>
+
+    <script src="js/zip.js"></script>
+    <script>
+        let game = null;
+        let path = [];
+        let history = [];
+        let currentLang = localStorage.getItem('games_lang') || 'nl';
+        
+        function setLanguage(lang) {
+            currentLang = lang;
+            localStorage.setItem('games_lang', lang);
+            document.querySelectorAll('.lang-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.textContent.toLowerCase() === lang);
+            });
+            
+            const texts = {
+                en: { subtitle: 'Connect the numbers in order and fill all cells', difficulty: 'Size', daily: 'Daily Puzzle' },
+                nl: { subtitle: 'Verbind de cijfers in volgorde en vul alle vakjes', difficulty: 'Grootte', daily: 'Dagelijkse Puzzle' }
+            };
+            
+            document.querySelector('.subtitle').textContent = texts[lang].subtitle;
+        }
+        
+        function startDailyPuzzle() {
+            const size = parseInt(document.getElementById('size').value);
+            startGame();
+        }
+        
+        function startGame() {
+            const size = parseInt(document.getElementById('size').value);
+            const generator = new ZipGenerator();
+            
+            let puzzle = null;
+            for (let i = 0; i < 50; i++) {
+                puzzle = generator.generate(size);
+                if (puzzle) break;
+            }
+            
+            if (!puzzle) {
+                alert('Kon geen puzzle genereren');
+                return;
+            }
+            
+            game = {
+                puzzle: puzzle.puzzle,
+                size: size,
+                maxNumber: puzzle.maxNumber
+            };
+            
+            path = [];
+            history = [];
+            
+            document.getElementById('total-numbers').textContent = size * size;
+            updateNextNumber();
+            renderGrid();
+        }
+        
+        function renderGrid() {
+            const grid = document.getElementById('zip-grid');
+            const size = game.size;
+            
+            grid.style.gridTemplateColumns = `repeat(${size}, 1fr)`;
+            grid.innerHTML = '';
+            
+            // Create path lookup
+            const pathMap = {};
+            path.forEach((p, i) => {
+                pathMap[`${p.x},${p.y}`] = i + 1;
+            });
+            
+            for (let y = 0; y < size; y++) {
+                for (let x = 0; x < size; x++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'zip-cell';
+                    cell.dataset.x = x;
+                    cell.dataset.y = y;
+                    
+                    const puzzleNum = game.puzzle[y][x];
+                    const pathNum = pathMap[`${x},${y}`];
+                    
+                    if (puzzleNum > 0) {
+                        cell.classList.add('number');
+                        cell.textContent = puzzleNum;
+                    } else if (pathNum) {
+                        cell.classList.add('filled');
+                        cell.textContent = pathNum;
+                    }
+                    
+                    // Current position
+                    if (path.length > 0) {
+                        const last = path[path.length - 1];
+                        if (last.x === x && last.y === y) {
+                            cell.classList.add('current');
+                        }
+                    }
+                    
+                    // Draw path lines
+                    if (pathNum && pathNum > 1) {
+                        const prev = path.find(p => p.value === pathNum - 1);
+                        if (prev) {
+                            const dx = prev.x - x;
+                            const dy = prev.y - y;
+                            const line = document.createElement('div');
+                            line.className = 'path-line';
+                            if (Math.abs(dx) === 1) line.classList.add('horizontal');
+                            else line.classList.add('vertical');
+                            cell.appendChild(line);
+                        }
+                    }
+                    
+                    cell.onclick = () => clickCell(x, y);
+                    grid.appendChild(cell);
+                }
+            }
+        }
+        
+        function clickCell(x, y) {
+            const nextNum = path.length + 1;
+            const puzzleNum = game.puzzle[y][x];
+            
+            // Can click on the next number in sequence
+            if (puzzleNum === nextNum) {
+                // Start new path or add to existing
+                if (path.length === 0) {
+                    history.push([...path.map(p => ({...p}))]);
+                    path.push({x, y, value: nextNum});
+                } else {
+                    const last = path[path.length - 1];
+                    // Check if adjacent
+                    const dx = Math.abs(x - last.x);
+                    const dy = Math.abs(y - last.y);
+                    if ((dx === 1 && dy === 0) || (dx === 0 && dy === 1)) {
+                        history.push([...path.map(p => ({...p}))]);
+                        path.push({x, y, value: nextNum});
+                    } else if (x === path[0].x && y === path[0].y) {
+                        // Clicked on start, reset
+                        history.push([...path.map(p => ({...p}))]);
+                        path = [{x, y, value: nextNum}];
+                    }
+                }
+            } else if (game.puzzle[y][x] === 0) {
+                // Empty cell - can add if adjacent to last
+                if (path.length > 0) {
+                    const last = path[path.length - 1];
+                    const dx = Math.abs(x - last.x);
+                    const dy = Math.abs(y - last.y);
+                    if ((dx === 1 && dy === 0) || (dx === 0 && dy === 1)) {
+                        history.push([...path.map(p => ({...p}))]);
+                        path.push({x, y, value: nextNum});
+                    }
+                }
+            }
+            
+            document.getElementById('undo-btn').disabled = history.length === 0;
+            updateNextNumber();
+            renderGrid();
+            checkWin();
+        }
+        
+        function updateNextNumber() {
+            document.getElementById('next-number').textContent = path.length + 1;
+        }
+        
+        function undoMove() {
+            if (history.length === 0) return;
+            path = history.pop();
+            document.getElementById('undo-btn').disabled = history.length === 0;
+            updateNextNumber();
+            renderGrid();
+        }
+        
+        function clearPath() {
+            if (path.length > 0) {
+                history.push([...path.map(p => ({...p}))]);
+                path = [];
+                document.getElementById('undo-btn').disabled = false;
+                updateNextNumber();
+                renderGrid();
+            }
+        }
+        
+        function checkWin() {
+            const size = game.size;
+            if (path.length === size * size) {
+                const last = path[path.length - 1];
+                if (last.value === size * size) {
+                    setTimeout(() => {
+                        alert('🎉 Gefeliciteerd! Je hebt gewonnen!');
+                    }, 100);
+                }
+            }
+        }
+        
+        function goToDashboard() {
+            window.location.href = '../../index.html';
+        }
+        
+        // Initialize
+        setLanguage(currentLang);
+        startGame();
+    </script>
+</body>
+</html>
