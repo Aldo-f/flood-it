@@ -112,8 +112,8 @@
         .dice-dot.empty { visibility: hidden; }
         
         /* Compact grid */
-        #game-grid.compact { gap: 0; padding: 0; }
-        #game-grid.compact .cell { border-radius: 0; }
+        #game-grid.compact { gap: 1px; padding: 2px; }
+        #game-grid.compact .cell { border-radius: 2px; }
         
         /* Centered layout */
         .app-container { width: 100%; max-width: 700px; display: flex; flex-direction: column; align-items: center; }
@@ -624,7 +624,7 @@
             gridEl.style.gridTemplateColumns = `repeat(${gridSize}, 1fr)`;
             gridEl.innerHTML = "";
             gridEl.classList.toggle("compact", compactMode);
-            const maxCellSize = compactMode ? Math.min(450 / gridSize, 55) : Math.min(400 / gridSize, 50);
+            const maxCellSize = Math.min(400 / gridSize, 45);
             gridEl.style.maxWidth = `${gridSize * maxCellSize}px`;
 
             for (let y = 0; y < gridSize; y++) {
