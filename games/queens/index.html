@@ -66,6 +66,20 @@
             z-index: 0;
         }
         
+        .queens-cell .marker {
+            position: absolute;
+            font-size: 16px;
+            color: rgba(231, 76, 60, 0.7);
+            font-weight: bold;
+            z-index: 3;
+        }
+        
+        .tool-btn.active-mode {
+            background: #e94560;
+            color: white;
+            border-color: #e94560;
+        }
+        
         .difficulty-select {
             width: 100%;
             padding: 12px;
@@ -135,6 +149,7 @@
         
         <div class="game-tools">
             <button class="tool-btn" onclick="undoMove()" id="undo-btn" disabled>↩ UNDO</button>
+            <button class="tool-btn" onclick="toggleMarkerMode()" id="marker-btn">❌ MARK</button>
             <button class="tool-btn" onclick="clearBoard()">🗑️ CLEAR</button>
             <button class="tool-btn" onclick="showHint()">💡 HINT</button>
         </div>
@@ -146,6 +161,7 @@
     <script>
         let game = null;
         let history = [];
+        let markerMode = false;
         let currentLang = localStorage.getItem('games_lang') || 'nl';
         
         const regionColors = [
@@ -221,6 +237,8 @@
                     
                     if (game.puzzle[y][x] === 'Q') {
                         cell.innerHTML = '<span class="queen">♛</span>';
+                    } else if (game.puzzle[y][x] === 'X') {
+                        cell.innerHTML = '<span class="marker">✕</span>';
                     }
                     
                     cell.onclick = () => toggleQueen(x, y);
@@ -232,16 +250,35 @@
         function toggleQueen(x, y) {
             history.push(game.puzzle.map(row => [...row]));
             
-            if (game.puzzle[y][x] === 'Q') {
-                game.puzzle[y][x] = null;
+            if (markerMode) {
+                // Toggle X marker
+                if (game.puzzle[y][x] === 'X') {
+                    game.puzzle[y][x] = null;
+                } else if (game.puzzle[y][x] === null) {
+                    game.puzzle[y][x] = 'X';
+                }
+                // Don't change if there's already a queen
             } else {
-                game.puzzle[y][x] = 'Q';
+                // Normal queen placement (can't place on X)
+                if (game.puzzle[y][x] === 'X') {
+                    // Remove X first
+                    game.puzzle[y][x] = null;
+                } else if (game.puzzle[y][x] === 'Q') {
+                    game.puzzle[y][x] = null;
+                } else {
+                    game.puzzle[y][x] = 'Q';
+                }
             }
             
             document.getElementById('undo-btn').disabled = history.length === 0;
             updateCount();
             renderGrid();
             checkWin();
+        }
+        
+        function toggleMarkerMode() {
+            markerMode = !markerMode;
+            document.getElementById('marker-btn').classList.toggle('active-mode', markerMode);
         }
         
         function updateCount() {
