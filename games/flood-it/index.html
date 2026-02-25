@@ -51,9 +51,9 @@
         .timer.danger { color: #e74c3c; animation: pulse 0.5s infinite; }
         @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
         .color-buttons { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin: 20px 0; }
-        .color-btn { width: 50px; height: 50px; border: 3px solid transparent; border-radius: 12px; cursor: pointer; transition: all 0.2s; }
+        .color-btn { width: 55px; height: 55px; border: 3px solid transparent; border-radius: 12px; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; overflow: hidden; }
         .color-btn:hover { transform: scale(1.1); }
-        { border-color: white; box-shadow: 0 0 20px rgba(255,255,255,0.3); }
+        .color-btn.current { border-color: white; box-shadow: 0 0 15px rgba(255,255,255,0.4); }
         .color-btn:disabled { opacity: 0.4; cursor: not-allowed; }
         .color-btn:disabled:hover { transform: none; }
         #game-grid { display: grid; gap: 2px; background: #0a0a15; padding: 4px; border-radius: 8px; margin: 20px 0; }
@@ -640,10 +640,30 @@
             for (let i = 0; i < game.num_colors; i++) {
                 const btn = document.createElement("button");
                 btn.className = "color-btn" + (i === currentColor ? " current" : "");
-                btn.style.backgroundColor = COLORS[i];
+                
+                if (displayMode === "colors") {
+                    btn.style.backgroundColor = COLORS[i];
+                } else if (displayMode === "numbers") {
+                    btn.style.backgroundColor = COLORS[i];
+                    btn.innerHTML = '<span style="color: white; font-weight: bold; font-size: 20px;">' + (i + 1) + '</span>';
+                } else if (displayMode === "dice") {
+                    btn.style.backgroundColor = COLORS[i];
+                    btn.innerHTML = '<div class="cell-dice" style="padding: 10%;">' + renderDiceDotsHTML(i + 1) + '</div>';
+                }
+                
                 btn.onclick = () => makeMove(i);
                 colorButtonsEl.appendChild(btn);
             }
+        }
+        
+        function renderDiceDotsHTML(num) {
+            const dots = getDiceDots(num);
+            let html = '<div style="display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 1fr); height: 100%; gap: 2px;">';
+            dots.forEach(d => {
+                html += '<div style="background: white; border-radius: 50%;' + (d ? '' : ' visibility: hidden;') + '"></div>';
+            });
+            html += '</div>';
+            return html;
         }
 
         function makeMove(color) {
