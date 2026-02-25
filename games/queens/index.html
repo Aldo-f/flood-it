@@ -134,7 +134,15 @@
                 </select>
             </label>
             
-            <button class="btn btn-primary" onclick="startDailyPuzzle()">
+            <div class="settings-toggle" style="margin-top: 15px;">
+                <span>🤖 Auto-X</span>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="auto-x-toggle" onchange="toggleAutoX()">
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+            
+            <button class="btn btn-primary" onclick="startDailyPuzzle()" style="margin-top: 15px;">
                 🔥 Dagelijkse Puzzle
             </button>
         </div>
@@ -149,7 +157,6 @@
         
         <div class="game-tools">
             <button class="tool-btn" onclick="undoMove()" id="undo-btn" disabled>↩ UNDO</button>
-            <button class="tool-btn" onclick="toggleMarkerMode()" id="marker-btn">❌ MARK</button>
             <button class="tool-btn" onclick="clearBoard()">🗑️ CLEAR</button>
             <button class="tool-btn" onclick="showHint()">💡 HINT</button>
         </div>
@@ -161,7 +168,9 @@
     <script>
         let game = null;
         let history = [];
-        let markerMode = false;
+        let autoX = false;
+        let isDragging = false;
+        let dragValue = null;
         let currentLang = localStorage.getItem('games_lang') || 'nl';
         
         const regionColors = [
@@ -241,34 +250,142 @@
                         cell.innerHTML = '<span class="marker">✕</span>';
                     }
                     
-                    cell.onclick = () => toggleQueen(x, y);
+                    // Click & drag events
+                    cell.onmousedown = (e) => {
+                        e.preventDefault();
+                        startDrag(x, y);
+                    };
+                    cell.onmouseenter = (e) => {
+                        if (isDragging) continueDrag(x, y);
+                    };
+                    cell.onclick = (e) => {
+                        if (!isDragging) toggleQueen(x, y);
+                    };
+                    
+                    // Touch events
+                    cell.ontouchstart = (e) => {
+                        e.preventDefault();
+                        startDrag(x, y);
+                    };
+                    cell.ontouchmove = (e) => {
+                        e.preventDefault();
+                        const touch = e.touches[0];
+                        const target = document.elementFromPoint(touch.clientX, touch.clientY);
+                        if (target && target.classList.contains('queens-cell')) {
+                            const tx = parseInt(target.dataset.x);
+                            const ty = parseInt(target.dataset.y);
+                            continueDrag(tx, ty);
+                        }
+                    };
+                    cell.ontouchend = endDrag;
+                    
                     grid.appendChild(cell);
+                }
+            }
+            
+            // Global mouse/touch up
+            document.onmouseup = endDrag;
+            document.ontouchend = endDrag;
+        }
+        
+        function startDrag(x, y) {
+            isDragging = true;
+            const current = game.puzzle[y][x];
+            
+            // Determine drag value based on current state
+            if (current === 'Q') dragValue = null;
+            else if (current === 'X') dragValue = 'Q';
+            else dragValue = 'X';
+            
+            // Save history on first cell
+            history.push(game.puzzle.map(row => [...row]));
+            toggleCell(x, y, dragValue);
+            
+            document.getElementById('undo-btn').disabled = history.length === 0;
+            updateCount();
+            renderGrid();
+            checkWin();
+        }
+        
+        function continueDrag(x, y) {
+            if (!isDragging) return;
+            
+            const current = game.puzzle[y][x];
+            
+            // Only toggle if different from drag value
+            if (current !== dragValue) {
+                toggleCell(x, y, dragValue);
+                updateCount();
+                renderGrid();
+                checkWin();
+            }
+        }
+        
+        function endDrag() {
+            isDragging = false;
+            dragValue = null;
+        }
+        
+        function toggleCell(x, y, forceValue = null) {
+            const current = game.puzzle[y][x];
+            
+            // Determine next value
+            let next;
+            if (forceValue !== null) {
+                next = forceValue;
+            } else {
+                if (current === null || current === undefined) next = 'X';
+                else if (current === 'X') next = 'Q';
+                else next = null;
+            }
+            
+            game.puzzle[y][x] = next;
+            
+            // Apply auto-X if enabled and queen placed
+            if (autoX && next === 'Q') {
+                applyAutoX(x, y);
+            }
+        }
+        
+        function applyAutoX(queenX, queenY) {
+            const size = game.size;
+            const regions = game.regions;
+            
+            // Mark all cells attacked by this queen
+            for (let x = 0; x < size; x++) {
+                if (x !== queenX && game.puzzle[queenY][x] === null) {
+                    game.puzzle[queenY][x] = 'X';
+                }
+            }
+            for (let y = 0; y < size; y++) {
+                if (y !== queenY && game.puzzle[y][queenX] === null) {
+                    game.puzzle[y][queenX] = 'X';
+                }
+            }
+            // Diagonals
+            for (let d = -size; d < size; d++) {
+                const dx = d;
+                const dy = d;
+                const nx = queenX + dx;
+                const ny = queenY + dy;
+                if (nx >= 0 && nx < size && ny >= 0 && ny < size && game.puzzle[ny][nx] === null) {
+                    game.puzzle[ny][nx] = 'X';
+                }
+            }
+            for (let d = -size; d < size; d++) {
+                const dx = d;
+                const dy = -d;
+                const nx = queenX + dx;
+                const ny = queenY + dy;
+                if (nx >= 0 && nx < size && ny >= 0 && ny < size && game.puzzle[ny][nx] === null) {
+                    game.puzzle[ny][nx] = 'X';
                 }
             }
         }
         
         function toggleQueen(x, y) {
             history.push(game.puzzle.map(row => [...row]));
-            
-            if (markerMode) {
-                // Toggle X marker
-                if (game.puzzle[y][x] === 'X') {
-                    game.puzzle[y][x] = null;
-                } else if (game.puzzle[y][x] === null) {
-                    game.puzzle[y][x] = 'X';
-                }
-                // Don't change if there's already a queen
-            } else {
-                // Normal queen placement (can't place on X)
-                if (game.puzzle[y][x] === 'X') {
-                    // Remove X first
-                    game.puzzle[y][x] = null;
-                } else if (game.puzzle[y][x] === 'Q') {
-                    game.puzzle[y][x] = null;
-                } else {
-                    game.puzzle[y][x] = 'Q';
-                }
-            }
+            toggleCell(x, y);
             
             document.getElementById('undo-btn').disabled = history.length === 0;
             updateCount();
@@ -277,8 +394,13 @@
         }
         
         function toggleMarkerMode() {
-            markerMode = !markerMode;
-            document.getElementById('marker-btn').classList.toggle('active-mode', markerMode);
+            // No longer needed - 3-state click handles this
+        }
+        
+        function toggleAutoX() {
+            autoX = document.getElementById('auto-x-toggle').checked;
+            localStorage.setItem('queens_autox', autoX);
+            renderGrid();
         }
         
         function updateCount() {
@@ -337,6 +459,11 @@
         
         // Initialize
         setLanguage(currentLang);
+        
+        // Load auto-X setting
+        autoX = localStorage.getItem('queens_autox') === 'true';
+        document.getElementById('auto-x-toggle').checked = autoX;
+        
         startGame();
     </script>
 </body>
