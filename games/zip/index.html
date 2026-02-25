@@ -116,6 +116,13 @@
         <p class="subtitle">Verbind de cijfers in volgorde en vul alle vakjes</p>
         
         <div class="card">
+            <div class="info-section" style="background: #0f3460; padding: 12px; border-radius: 8px; margin-bottom: 15px; font-size: 12px; color: #aaa;">
+                <strong>📖 Hoe spelen:</strong><br>
+                • Klik op <strong>1</strong> en sleep naar 2, 3, 4...<br>
+                • Vul ALLE vakjes met het pad<br>
+                • Je mag alleen horizontaal/verticaal bewegen
+            </div>
+            
             <label>
                 <span data-i18n="difficulty">Grootte</span>
                 <select class="difficulty-select" id="size" onchange="startGame()">
@@ -162,11 +169,22 @@
             });
             
             const texts = {
-                en: { subtitle: 'Connect the numbers in order and fill all cells', difficulty: 'Size', daily: 'Daily Puzzle' },
-                nl: { subtitle: 'Verbind de cijfers in volgorde en vul alle vakjes', difficulty: 'Grootte', daily: 'Dagelijkse Puzzle' }
+                en: { 
+                    subtitle: 'Connect the numbers in order and fill all cells', 
+                    difficulty: 'Size', 
+                    daily: 'Daily Puzzle',
+                    howTo: '📖 How to play:'
+                },
+                nl: { 
+                    subtitle: 'Verbind de cijfers in volgorde en vul alle vakjes', 
+                    difficulty: 'Grootte', 
+                    daily: 'Dagelijkse Puzzle',
+                    howTo: '📖 Hoe spelen:'
+                }
             };
             
             document.querySelector('.subtitle').textContent = texts[lang].subtitle;
+            document.querySelector('.info-section strong').textContent = texts[lang].howTo;
         }
         
         function startDailyPuzzle() {

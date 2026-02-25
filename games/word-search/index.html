@@ -433,6 +433,15 @@
             const dayOfWeek = date.getDay();
             const isSunday = dayOfWeek === 0;
             
+            // Check if week is complete (Monday through Saturday)
+            if (isSunday) {
+                const weekComplete = checkWeekComplete();
+                if (!weekComplete) {
+                    alert('Week niet volledig! Completeer ma-zat voor de bonus.');
+                    return;
+                }
+            }
+            
             // Get daily words
             const daily = getDailyWords(date);
             const gridSize = isSunday ? 12 : 10; // Bonus = larger grid
@@ -754,6 +763,39 @@
             }
             
             showScreen('result');
+        }
+        
+        function checkWeekComplete() {
+            const key = 'wordsearch_daily';
+            const data = JSON.parse(localStorage.getItem(key) || '{}');
+            
+            const now = new Date();
+            const dayOfWeek = now.getDay();
+            
+            // Get start of week (Monday)
+            const startOfWeek = new Date(now);
+            startOfWeek.setDate(now.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1));
+            
+            // Check each day from Monday to Saturday
+            for (let i = 0; i < 6; i++) {
+                const checkDate = new Date(startOfWeek);
+                checkDate.setDate(startOfWeek.getDate() + i);
+                const dateStr = checkDate.toISOString().split('T')[0];
+                
+                if (!data[dateStr] || !data[dateStr].completed) {
+                    return false;
+                }
+            }
+            
+            return true;
+        }
+        
+        function getWeekNumber(date) {
+            const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+            const dayNum = d.getUTCDay() || 7;
+            d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+            const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+            return `${d.getUTCFullYear()}-W${Math.ceil((((d - yearStart) / 86400000) + 1) / 7)}`;
         }
         
         function saveDailyScore(time) {
