@@ -650,8 +650,10 @@
                 if (displayMode === "colors") {
                     btn.style.backgroundColor = COLORS[i];
                 } else if (displayMode === "numbers") {
-                    btn.style.backgroundColor = COLORS[i];
-                    btn.innerHTML = '<span style="color: white; font-weight: bold; font-size: 20px;">' + (i + 1) + '</span>';
+                    // White background with black number
+                    btn.style.backgroundColor = '#ffffff';
+                    btn.style.color = '#000000';
+                    btn.innerHTML = '<span style="color: black; font-weight: bold; font-size: 22px;">' + (i + 1) + '</span>';
                 } else if (displayMode === "dice") {
                     btn.style.backgroundColor = COLORS[i];
                     btn.innerHTML = '<div class="cell-dice" style="padding: 10%;">' + renderDiceDotsHTML(i + 1) + '</div>';
@@ -852,9 +854,13 @@
             cell.innerHTML = "";
             
             if (displayMode === "numbers") {
+                // White background with black number
+                cell.style.backgroundColor = '#ffffff';
                 const numEl = document.createElement("div");
                 numEl.className = "cell-number";
                 numEl.textContent = colorIndex + 1;
+                numEl.style.color = '#000000';
+                numEl.style.textShadow = 'none';
                 cell.appendChild(numEl);
             } else if (displayMode === "dice") {
                 const diceEl = document.createElement("div");
