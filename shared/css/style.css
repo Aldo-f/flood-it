@@ -772,3 +772,27 @@ input:checked + .toggle-slider::before {
 
 .hidden { display: none !important; }
 .visible { display: block !important; }
+
+/* Back Button */
+.back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: #aaa;
+    text-decoration: none;
+    font-size: 14px;
+    padding: 10px 15px;
+    margin-bottom: 20px;
+    transition: color 0.2s;
+    cursor: pointer;
+    background: none;
+    border: none;
+}
+
+.back-btn:hover {
+    color: #e94560;
+}
+
+.back-btn::before {
+    content: "←";
+}

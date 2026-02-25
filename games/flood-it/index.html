@@ -129,6 +129,7 @@
     </div>
 
     <div id="start-screen" class="screen active">
+        <button class="back-btn" onclick="goToDashboard()" data-i18n="back_to_menu">← BACK</button>
         <h1>Flood-It</h1>
         <p class="subtitle" data-i18n="subtitle">Color the whole board in as few moves as possible</p>
         <div class="card">
@@ -202,12 +203,14 @@
             </button>
         </div>
         <div class="game-footer">
+            <button class="btn btn-secondary" onclick="goToDashboard()" data-i18n="back_to_menu">← BACK</button>
             <button class="btn btn-secondary" onclick="showStartScreen()" data-i18n="new_game">NEW GAME</button>
             <button class="btn btn-primary" id="next-btn" onclick="nextBoard()" style="display: none; margin-top: 0;" data-i18n="next_board">NEXT BOARD</button>
         </div>
     </div>
 
     <div id="result-screen" class="screen">
+        <button class="back-btn" onclick="goToDashboard()" data-i18n="back_to_menu">← BACK</button>
         <div class="result-screen">
             <div id="result-message"></div>
             <div class="result-label" id="result-label"></div>
@@ -216,6 +219,7 @@
         </div>
     </div>
 
+    <script src="../../shared/js/navigation.js"></script>
     <script>
         const COLORS = ["#e74c3c", "#3498db", "#2ecc71", "#f39c12", "#9b59b6", "#1abc9c", "#e91e63", "#ff5722", "#795548", "#607d8b"];
         const DIFFICULTY_SETTINGS = {
@@ -267,7 +271,8 @@
                 contrast_mode: "Contrast",
                 color: "Color",
                 bw: "B&W",
-                compact: "COMPACT"
+                compact: "COMPACT",
+                back_to_menu: "← BACK"
             },
             nl: {
                 subtitle: "Kleur het hele bord in zo weinig mogelijk zetten",
@@ -310,7 +315,8 @@
                 contrast_mode: "Contrast",
                 color: "Kleur",
                 bw: "Z&W",
-                compact: "COMPACT"
+                compact: "COMPACT",
+                back_to_menu: "← TERUG"
             }
         };
 
