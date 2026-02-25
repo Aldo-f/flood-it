@@ -4,7 +4,9 @@
  */
 
 function goToDashboard() {
-    window.location.href = '../index.html';
+    // From games/flood-it/ -> ../../index.html
+    // From games/queens/ -> ../../index.html
+    window.location.href = '../../index.html';
 }
 
 function goToGame(gameName) {
